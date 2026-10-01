@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#181622">
+  <meta name="description" content="D&D 5e Combat & Initiative Tracker - Fluid responsive web app for PC, tablet, and mobile browsers.">
+  <title>D&D 5e Combat Tracker</title>
+
+  <!-- Google Fonts: Cinzel & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Favicon & PWA Manifest -->
+  <link rel="icon" type="image/jpeg" href="assets/icon.jpg">
+  <link rel="apple-touch-icon" href="assets/icon.jpg">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div id="app-shell">
+    <!-- Top Site Header (Responsive for PC & Mobile) -->
+    <header class="site-header">
+      <div class="header-container">
+        <!-- Brand -->
+        <div class="brand-wrapper" data-tab="combat">
+          <div class="brand-icon">
+            <img src="assets/icon.jpg" alt="D&D Tracker Icon" onerror="this.innerHTML='⚔️'">
+          </div>
+          <div class="brand-text">
+            <span class="brand-title">Combat Tracker</span>
+            <span class="brand-subtitle">D&D 5e Initiative Arena</span>
+          </div>
+        </div>
+
+        <!-- Desktop Navigation Tabs (Hidden on mobile) -->
+        <nav class="desktop-nav" aria-label="Desktop navigation">
+          <button class="nav-tab-btn active" data-tab="combat">
+            <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM13 13v4h-2v-4H8l4-4 4 4h-3z" style="display:none;"/><path d="M19.78 12.38l-4.24-4.24L17 6.67l4.24 4.24-1.46 1.47zM14.07 18.1l-1.47-1.47 4.24-4.24 1.47 1.47-4.24 4.24zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" style="display:none;"/><path d="M7.5 13.5L3 18l3 3 4.5-4.5L7.5 13.5zM20.5 4.5l-4-1-6.5 6.5 5 5 6.5-6.5-1-4zM8 11l5 5-2 2-5-5 2-2z"/></svg>
+            <span>Combat Arena</span>
+          </button>
+          <button class="nav-tab-btn" data-tab="party">
+            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <span>Party Roster</span>
+          </button>
+          <button class="nav-tab-btn" data-tab="bestiary">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+            <span>Bestiary</span>
+          </button>
+          <button class="nav-tab-btn" data-tab="dice">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
+            <span>Dice & Rules</span>
+          </button>
+        </nav>
+
+        <!-- Header Action Utilities (Backup / Restore) -->
+        <div class="header-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportDataAsJson()" title="Export JSON backup">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            <span>Backup</span>
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="triggerImportJson()" title="Import JSON backup">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+            <span>Import</span>
+          </button>
+          <input type="file" id="file-import-input" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Dynamic Content Container -->
+    <main class="main-content" id="main-container">
+      <!-- Injected dynamically by app.js -->
+    </main>
+
+    <!-- Mobile Bottom Navigation Bar (Visible on screens <= 768px) -->
+    <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+      <div class="mobile-nav-items">
+        <button class="mobile-nav-btn active" data-tab="combat">
+          <svg viewBox="0 0 24 24"><path d="M7.5 13.5L3 18l3 3 4.5-4.5L7.5 13.5zM20.5 4.5l-4-1-6.5 6.5 5 5 6.5-6.5-1-4zM8 11l5 5-2 2-5-5 2-2z"/></svg>
+          <span>Combat</span>
+        </button>
+        <button class="mobile-nav-btn" data-tab="party">
+          <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+          <span>Party</span>
+        </button>
+        <button class="mobile-nav-btn" data-tab="bestiary">
+          <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+          <span>Bestiary</span>
+        </button>
+        <button class="mobile-nav-btn" data-tab="dice">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
+          <span>Dice</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL DIALOGS                                        -->
+  <!-- ==================================================== -->
+
+  <!-- Modal 1: Damage & Healing -->
+  <div class="modal-overlay" id="modal-damage-heal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-dmg-name">Damage & Healing</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-damage-heal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: center; margin-bottom: var(--space-xs);">
+          <strong id="modal-dmg-hp-display" style="font-size: var(--font-md); color: var(--color-gold-light);"></strong>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modal-dmg-input">Amount</label>
+          <input type="number" id="modal-dmg-input" class="form-input" placeholder="e.g. 14" min="1" autofocus>
+        </div>
+        <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap;">
+          <button class="btn btn-danger" style="flex: 1;" onclick="submitDamage(false)">- Apply Damage</button>
+          <button class="btn btn-success" style="flex: 1;" onclick="submitDamage(true)">+ Apply Healing</button>
+        </div>
+        <div style="display: flex; gap: var(--space-xs); margin-top: var(--space-xs);">
+          <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="submitTempHp()">Set as Temp HP</button>
+          <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="submitSetDirectHp()">Direct HP Override</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modal-damage-heal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Armor Class & Cover -->
+  <div class="modal-overlay" id="modal-ac">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Armor Class & Cover</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-ac')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: var(--space-xs);">
+          Target: <strong id="modal-ac-name" style="color: var(--color-gold-light);"></strong>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modal-ac-input">Base Armor Class (AC)</label>
+          <input type="number" id="modal-ac-input" class="form-input" min="1" max="40">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modal-ac-cover-select">5e Cover Type</label>
+          <select id="modal-ac-cover-select" class="form-select">
+            <option value="NONE">No Cover (+0 AC)</option>
+            <option value="HALF">Half Cover (+2 AC, +2 Dex Saves)</option>
+            <option value="THREE_QUARTERS">3/4 Cover (+5 AC, +5 Dex Saves)</option>
+            <option value="TOTAL">Total Cover (+10 AC, cannot be targeted directly)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modal-ac')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAcUpdate()">Save AC</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Speed & Difficult Terrain -->
+  <div class="modal-overlay" id="modal-speed">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Movement Speed</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-speed')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: var(--space-xs);">
+          Target: <strong id="modal-speed-name" style="color: var(--color-gold-light);"></strong>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modal-speed-input">Base Speed (feet)</label>
+          <input type="number" id="modal-speed-input" class="form-input" step="5" min="0">
+        </div>
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="modal-speed-diff-checkbox">
+            <span style="font-size: var(--font-sm); font-weight: 600;">Difficult Terrain (Halves Speed)</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modal-speed')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitSpeedUpdate()">Save Speed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Conditions Multi-Select -->
+  <div class="modal-overlay" id="modal-conditions">
+    <div class="modal-dialog" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Conditions for <span id="modal-conditions-name"></span></h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-conditions')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: var(--font-xs); color: var(--text-muted); margin-bottom: var(--space-xs);">
+          Select or clear conditions. Badges reflect official 5e rules and status color coding.
+        </p>
+        <div id="modal-conditions-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; max-height: 50vh; overflow-y: auto;">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('modal-conditions')">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Edit Single Initiative -->
+  <div class="modal-overlay" id="modal-initiative">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Initiative Score</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-initiative')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom: var(--space-xs);">
+          Target: <strong id="modal-init-name" style="color: var(--color-gold-light);"></strong>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modal-init-input">Initiative Score</label>
+          <input type="number" id="modal-init-input" class="form-input">
+        </div>
+        <button class="btn btn-secondary" style="width: 100%;" onclick="rollSingleCombatantInitiative()">
+          🎲 Roll d20 + Init Modifier
+        </button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modal-initiative')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitInitiative()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 6: Party Initiative Batch Entry -->
+  <div class="modal-overlay" id="modal-party-initiative">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Party Initiatives</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-party-initiative')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xs);">
+          <span style="font-size: var(--font-xs); color: var(--text-muted);">Enter rolled initiatives for party members</span>
+          <button class="btn btn-secondary btn-sm" onclick="rollAllPartyInModal()">Roll All</button>
+        </div>
+        <div id="modal-party-init-list" style="max-height: 50vh; overflow-y: auto;">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modal-party-initiative')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitPartyInitiatives()">Apply Initiatives</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 7: Add Enemy / Custom Monster -->
+  <div class="modal-overlay" id="modal-add-enemy">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Monster / Enemy</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-add-enemy')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="modal-enemy-name">Monster Name</label>
+          <input type="text" id="modal-enemy-name" class="form-input" placeholder="e.g. Goblin Archer, Red Dragon">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="modal-enemy-hp">Max HP</label>
+            <input type="number" id="modal-enemy-hp" class="form-input" value="15" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modal-enemy-ac">Armor Class (AC)</label>
+            <input type="number" id="modal-enemy-ac" class="form-input" value="13" min="1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="modal-enemy-mod">Initiative Modifier</label>
+            <input type="number" id="modal-enemy-mod" class="form-input" value="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modal-enemy-count">Quantity to Spawn</label>
+            <input type="number" id="modal-enemy-count" class="form-input" value="1" min="1" max="20">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="modal-enemy-cr">Challenge Rating (CR)</label>
+            <input type="text" id="modal-enemy-cr" class="form-input" value="CR 1/2">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modal-enemy-speed">Speed (ft)</label>
+            <input type="number" id="modal-enemy-speed" class="form-input" value="30">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modal-enemy-notes">Attacks & Traits (Optional)</label>
+          <textarea id="modal-enemy-notes" class="form-textarea" rows="2" placeholder="e.g. Shortbow +4 (1d6+2), Nimble Escape"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modal-add-enemy')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAddEnemy()">Add to Arena</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 8: Character Creator / Editor -->
+  <div class="modal-overlay" id="modal-character">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-char-title">Player Character</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal('modal-character')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="modal-char-name">Character Name</label>
+            <input type="text" id="modal-char-name" class="form-input" placeholder="e.g. Thorin">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modal-char-player">Player Name</label>
+            <input type="text" id="modal-char-player" class="form-input" placeholder="e.g. Alex">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="modal-char-class">Class & Subclass</label>
+            <input type="text" id="modal-char-class" class="form-input" placeholder="e.g. Fighter (Champion)">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modal-char-level">Level</label>
+            <input type="number" id="modal-char-level" class="form-input" value="1" min="1" max="20">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="modal-char-hp">Max HP</label>
+            <input type="number" id="modal-char-hp" class="form-input" value="12" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modal-char-ac">Armor Class (AC)</label>
+            <input type="number" id="modal-char-ac" class="form-input" value="14" min="1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="modal-char-mod">Initiative Modifier</label>
+            <input type="number" id="modal-char-mod" class="form-input" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modal-char-speed">Speed (ft)</label>
+            <input type="number" id="modal-char-speed" class="form-input" value="30">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="modal-char-percep">Passive Perception</label>
+            <input type="number" id="modal-char-percep" class="form-input" value="10">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modal-char-dc">Spell Save DC (Optional)</label>
+            <input type="number" id="modal-char-dc" class="form-input" placeholder="e.g. 15">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="modal-char-notes">Abilities & Notes</label>
+          <textarea id="modal-char-notes" class="form-textarea" rows="2" placeholder="e.g. Second Wind, Action Surge, Darkvision 60ft"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modal-character')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitCharacterForm()">Save Character</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

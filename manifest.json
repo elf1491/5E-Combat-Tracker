@@ -1,0 +1,16 @@
+{
+  "name": "D&D 5e Combat Tracker",
+  "short_name": "Combat Tracker",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#181622",
+  "theme_color": "#181622",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "assets/icon.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
