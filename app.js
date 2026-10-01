@@ -1,33 +1,39 @@
 /**
- * D&D 5e Combat Tracker - Complete Web Application Engine
- * Supports Responsive Desktop, Tablet, and Mobile layouts
+ * D&D 5e Combat Tracker - Mobile-Identical Web Engine
+ * Matches Android Mobile UI pixel-for-pixel with full feature parity
  */
 
 // ==========================================
-// CONSTANTS & GAME DATA
+// 5E CONSTANTS & STARTER DATA (Matching Screenshots)
 // ==========================================
 
+const OFFICIAL_5E_CLASSES = [
+  "Barbarian", "Bard", "Cleric", "Druid", "Fighter",
+  "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer",
+  "Warlock", "Wizard", "Artificer"
+];
+
 const MONSTER_PRESETS = [
-  { name: "Bandit", cr: "CR 1/8", type: "Humanoid", maxHp: 11, ac: 12, initMod: 1, speed: 30, perception: 10, spellDc: null, notes: "Scimitar +3 (1d6+1), Light Crossbow +3 (1d8+1)" },
-  { name: "Cultist", cr: "CR 1/8", type: "Humanoid", maxHp: 9, ac: 12, initMod: 1, speed: 30, perception: 10, spellDc: null, notes: "Dark Devotion (advantage vs charm/frightened), Scimitar +3 (1d6+1)" },
-  { name: "Goblin", cr: "CR 1/4", type: "Humanoid", maxHp: 7, ac: 15, initMod: 2, speed: 30, perception: 9, spellDc: null, notes: "Nimble Escape: Disengage or Hide as bonus action. Scimitar +4 (1d6+2)" },
-  { name: "Skeleton", cr: "CR 1/4", type: "Undead", maxHp: 13, ac: 13, initMod: 2, speed: 30, perception: 9, spellDc: null, notes: "Vulnerable to bludgeoning, immune to poison. Shortsword +4 (1d6+2)" },
-  { name: "Zombie", cr: "CR 1/4", type: "Undead", maxHp: 22, ac: 8, initMod: -2, speed: 20, perception: 8, spellDc: null, notes: "Undead Fortitude (DC 5+dmg Con save to drop to 1 HP instead of 0)" },
-  { name: "Wolf", cr: "CR 1/4", type: "Beast", maxHp: 11, ac: 13, initMod: 2, speed: 40, perception: 13, spellDc: null, notes: "Pack Tactics (advantage if ally within 5ft). Bite +4 (2d4+2, DC 11 Str or prone)" },
-  { name: "Orc", cr: "CR 1/2", type: "Humanoid", maxHp: 15, ac: 13, initMod: 1, speed: 30, perception: 10, spellDc: null, notes: "Aggressive: Bonus action move up to speed toward enemy. Greataxe +5 (1d12+3)" },
-  { name: "Hobgoblin", cr: "CR 1/2", type: "Humanoid", maxHp: 11, ac: 18, initMod: 1, speed: 30, perception: 10, spellDc: null, notes: "Martial Advantage (+2d6 damage if ally within 5ft). Longsword +3 (1d8+1)" },
-  { name: "Bugbear", cr: "CR 1", type: "Humanoid", maxHp: 27, ac: 16, initMod: 2, speed: 30, perception: 10, spellDc: null, notes: "Surprise Attack (+2d6), Brute (+1 die melee damage). Morningstar +4 (2d8+2)" },
-  { name: "Ghoul", cr: "CR 1", type: "Undead", maxHp: 22, ac: 12, initMod: 2, speed: 30, perception: 10, spellDc: null, notes: "Claws: DC 10 Con save or paralyzed for 1 min. Immune to poison/charm" },
-  { name: "Bandit Captain", cr: "CR 2", type: "Humanoid", maxHp: 65, ac: 15, initMod: 3, speed: 30, perception: 14, spellDc: null, notes: "Multiattack (3 melee), Parry reaction (+2 AC vs one melee attack)" },
-  { name: "Cult Fanatic", cr: "CR 2", type: "Humanoid", maxHp: 33, ac: 13, initMod: 2, speed: 30, perception: 11, spellDc: 11, notes: "Spellcaster (DC 11): Hold Person, Spiritual Weapon, Inflict Wounds (3d10)" },
-  { name: "Ogre", cr: "CR 2", type: "Giant", maxHp: 59, ac: 11, initMod: -1, speed: 40, perception: 8, spellDc: null, notes: "Greatclub +6 (2d8+4), Javelin +6 (2d6+4)" },
-  { name: "Wight", cr: "CR 3", type: "Undead", maxHp: 45, ac: 14, initMod: 2, speed: 30, perception: 13, spellDc: null, notes: "Life Drain (reduces target max HP on DC 13 Con save). Longsword +4 (1d8+2)" },
-  { name: "Troll", cr: "CR 5", type: "Giant", maxHp: 84, ac: 15, initMod: 1, speed: 30, perception: 12, spellDc: null, notes: "Regeneration (regains 10 HP at start of turn unless taking fire or acid)" },
-  { name: "Vampire Spawn", cr: "CR 5", type: "Undead", maxHp: 82, ac: 15, initMod: 3, speed: 30, perception: 13, spellDc: null, notes: "Regeneration 10 HP, Spider Climb, Bite +6 (reduces max HP by necrotic damage)" },
-  { name: "Mage", cr: "CR 6", type: "Humanoid", maxHp: 40, ac: 15, initMod: 2, speed: 30, perception: 11, spellDc: 14, notes: "Spellcaster (DC 14): Fireball (8d6), Greater Invisibility, Shield (+5 AC), Cone of Cold" },
-  { name: "Young Red Dragon", cr: "CR 10", type: "Dragon", maxHp: 178, ac: 18, initMod: 0, speed: 40, perception: 18, spellDc: 17, notes: "Fire Breath (16d6 fire, DC 17 Dex for half), Multiattack (Bite +10, 2 Claws +10), Fly 80ft" },
-  { name: "Beholder", cr: "CR 13", type: "Aberration", maxHp: 180, ac: 18, initMod: 2, speed: 20, perception: 22, spellDc: 16, notes: "Antimagic Cone (150ft), 3 random Eye Rays per turn (DC 16: Disintegration, Death, Charm, Paralysis)" },
-  { name: "Lich", cr: "CR 21", type: "Undead", maxHp: 135, ac: 17, initMod: 3, speed: 30, perception: 19, spellDc: 20, notes: "Legendary Actions, Power Word Kill, Disrupt Life (6d6 necrotic), Globe of Invulnerability" }
+  { name: "Bandit", cr: "CR 1/8", type: "Humanoid", maxHp: 11, ac: 12, initMod: 1, speed: 30, perception: 10, spellDc: null, notes: "Scimitar +3 (1d6+1), Light Crossbow" },
+  { name: "Cultist", cr: "CR 1/8", type: "Humanoid", maxHp: 9, ac: 12, initMod: 1, speed: 30, perception: 10, spellDc: null, notes: "Dark Devotion (adv vs charm/fright)" },
+  { name: "Goblin", cr: "CR 1/4", type: "Humanoid", maxHp: 7, ac: 15, initMod: 2, speed: 30, perception: 9, spellDc: null, notes: "Nimble Escape: Disengage or Hide as bonus action" },
+  { name: "Skeleton", cr: "CR 1/4", type: "Undead", maxHp: 13, ac: 13, initMod: 2, speed: 30, perception: 9, spellDc: null, notes: "Vulnerable to bludgeoning, immune to poison" },
+  { name: "Zombie", cr: "CR 1/4", type: "Undead", maxHp: 22, ac: 8, initMod: -2, speed: 20, perception: 8, spellDc: null, notes: "Undead Fortitude (Con save to drop to 1 HP)" },
+  { name: "Wolf", cr: "CR 1/4", type: "Beast", maxHp: 11, ac: 13, initMod: 2, speed: 40, perception: 13, spellDc: null, notes: "Pack Tactics (adv if ally within 5ft), Keen Hearing/Smell" },
+  { name: "Orc", cr: "CR 1/2", type: "Humanoid", maxHp: 15, ac: 13, initMod: 1, speed: 30, perception: 10, spellDc: null, notes: "Aggressive: Bonus action move up to speed toward enemy" },
+  { name: "Hobgoblin", cr: "CR 1/2", type: "Humanoid", maxHp: 11, ac: 18, initMod: 1, speed: 30, perception: 10, spellDc: null, notes: "Martial Advantage (+2d6 damage if ally within 5ft)" },
+  { name: "Bugbear", cr: "CR 1", type: "Humanoid", maxHp: 27, ac: 16, initMod: 2, speed: 30, perception: 10, spellDc: null, notes: "Surprise Attack (+2d6), Brute (+1 die melee)" },
+  { name: "Ghoul", cr: "CR 1", type: "Undead", maxHp: 22, ac: 12, initMod: 2, speed: 30, perception: 10, spellDc: null, notes: "Claws: DC 10 Con save or paralyzed for 1 min" },
+  { name: "Bandit Captain", cr: "CR 2", type: "Humanoid", maxHp: 65, ac: 15, initMod: 3, speed: 30, perception: 14, spellDc: null, notes: "Multiattack (3 melee), Parry reaction (+2 AC)" },
+  { name: "Cult Fanatic", cr: "CR 2", type: "Humanoid", maxHp: 33, ac: 13, initMod: 2, speed: 30, perception: 11, spellDc: 11, notes: "Spellcaster: Hold Person, Spiritual Weapon" },
+  { name: "Ogre", cr: "CR 2", type: "Giant", maxHp: 59, ac: 11, initMod: -1, speed: 40, perception: 8, spellDc: null, notes: "Greatclub +6 (2d8+4)" },
+  { name: "Wight", cr: "CR 3", type: "Undead", maxHp: 45, ac: 14, initMod: 2, speed: 30, perception: 13, spellDc: null, notes: "Life Drain (reduces max HP on failed Con save)" },
+  { name: "Troll", cr: "CR 5", type: "Giant", maxHp: 84, ac: 15, initMod: 1, speed: 30, perception: 12, spellDc: null, notes: "Regeneration 10 HP per turn unless fire/acid damage" },
+  { name: "Vampire Spawn", cr: "CR 5", type: "Undead", maxHp: 82, ac: 15, initMod: 3, speed: 30, perception: 13, spellDc: null, notes: "Regeneration 10 HP, Spider Climb, Bite attack" },
+  { name: "Mage", cr: "CR 6", type: "Humanoid", maxHp: 40, ac: 15, initMod: 2, speed: 30, perception: 11, spellDc: 14, notes: "Spells: Fireball, Greater Invisibility, Shield" },
+  { name: "Young Red Dragon", cr: "CR 10", type: "Dragon", maxHp: 178, ac: 18, initMod: 0, speed: 40, perception: 18, spellDc: 17, notes: "Fire Breath (16d6 fire, DC 17 Dex), Fly 80ft" },
+  { name: "Beholder", cr: "CR 13", type: "Aberration", maxHp: 180, ac: 18, initMod: 2, speed: 20, perception: 22, spellDc: 16, notes: "Antimagic Cone, 3 random Eye Rays per turn" },
+  { name: "Lich", cr: "CR 21", type: "Undead", maxHp: 135, ac: 17, initMod: 3, speed: 30, perception: 19, spellDc: 20, notes: "Legendary Actions, Power Word Kill, Disrupt Life" }
 ];
 
 const CONDITIONS = [
@@ -47,91 +53,240 @@ const CONDITIONS = [
   { id: "prone", name: "Prone", color: "#D97706", desc: "Only movement is crawling. Disadvantage on attack rolls. Attacks against within 5ft have advantage; ranged attacks have disadvantage." },
   { id: "restrained", name: "Restrained", color: "#B45309", desc: "Speed becomes 0. Attacks against have advantage, attack rolls have disadvantage. Disadvantage on Dex saves." },
   { id: "stunned", name: "Stunned", color: "#F59E0B", desc: "Incapacitated, can't move, speaks falteringly. Auto-fails Str/Dex saves. Attacks against have advantage." },
-  { id: "unconscious", name: "Unconscious", color: "#991B1B", desc: "Incapacitated, can't move/speak, unaware. Drops held items, falls prone. Auto-fails Str/Dex saves. Attacks have advantage, 5ft hits are crits." },
+  { id: "unconscious", name: "Unconscious", color: "#991B1B", desc: "Incapacitated, can't move/speak, unaware. Drops held items, falls prone. Auto-fails Str/Dex saves. Attacks against have advantage and melee is auto-crit." },
   { id: "dead", name: "Dead", color: "#475569", desc: "Character has died. Skipped in combat turn order until revived." },
   { id: "blessed", name: "Blessed", color: "#FACC15", desc: "Add 1d4 to attack rolls and saving throws." },
   { id: "bane", name: "Bane", color: "#7C3AED", desc: "Subtract 1d4 from attack rolls and saving throws." },
-  { id: "difficult_terrain", name: "Difficult Terrain", color: "#D97706", desc: "Moving through difficult terrain costs 1 extra foot per foot moved (halves speed)." },
+  { id: "difficult_terrain", name: "Difficult Terrain", color: "#D97706", desc: "Moving through difficult terrain costs 1 extra foot per foot moved (halves movement speed)." },
   { id: "half_cover", name: "Half Cover", color: "#3B82F6", desc: "+2 bonus to AC and Dexterity saving throws." },
   { id: "three_quarters_cover", name: "3/4 Cover", color: "#6366F1", desc: "+5 bonus to AC and Dexterity saving throws." },
   { id: "total_cover", name: "Total Cover", color: "#8B5CF6", desc: "Completely concealed by an obstacle. Can't be targeted directly by attacks or spells." }
 ];
 
+// Exact Starter Party from Screenshots (Theron Stormwind & Vesper Stonefist)
 const DEFAULT_PARTY = [
-  { id: "pc-1", name: "Thorin Stonehammer", playerName: "Alex", characterClass: "Fighter (Battle Master)", level: 5, maxHp: 44, currentHp: 44, tempHp: 0, armorClass: 18, initiativeModifier: 1, passivePerception: 12, speed: 30, spellDc: null, notes: "Action Surge, Second Wind, Maneuvers: Riposte, Precision Attack", color: "#3B82F6" },
-  { id: "pc-2", name: "Lyra Moonwhisper", playerName: "Sam", characterClass: "Wizard (Evocation)", level: 5, maxHp: 28, currentHp: 28, tempHp: 0, armorClass: 13, initiativeModifier: 2, passivePerception: 13, speed: 30, spellDc: 15, notes: "Sculpt Spells, Fireball, Counterspell, Misty Step, Mage Armor", color: "#A855F7" },
-  { id: "pc-3", name: "Elidor Shadowfoot", playerName: "Jordan", characterClass: "Rogue (Arcane Trickster)", level: 5, maxHp: 33, currentHp: 33, tempHp: 0, armorClass: 15, initiativeModifier: 4, passivePerception: 16, speed: 30, spellDc: 13, notes: "Sneak Attack (3d6), Cunning Action, Uncanny Dodge, Mage Hand Legerdemain", color: "#10B981" },
-  { id: "pc-4", name: "Selene Lightbringer", playerName: "Morgan", characterClass: "Cleric (Life Domain)", level: 5, maxHp: 38, currentHp: 38, tempHp: 0, armorClass: 18, initiativeModifier: 0, passivePerception: 17, speed: 30, spellDc: 15, notes: "Channel Divinity: Preserve Life, Disciple of Life, Spirit Guardians, Spiritual Weapon", color: "#F59E0B" }
+  {
+    id: "pc-vesper",
+    name: "Vesper Stonefist",
+    playerName: "Player 1",
+    characterClass: "Fighter",
+    level: 1,
+    maxHp: 12,
+    currentHp: 12,
+    tempHp: 0,
+    armorClass: 18,
+    initiativeModifier: 3,
+    passivePerception: 12,
+    speed: 30,
+    spellDc: null,
+    notes: "Heavy armor vanguard shielding the party in combat.",
+    abilities: [
+      { id: "ab-1", name: "Second Wind", type: "Bonus Action", description: "Bonus Action • Regain 1d10 + level HP once per short rest." },
+      { id: "ab-2", name: "Action Surge", type: "Action", description: "Action • Take 1 additional action on your turn. 1/short rest." }
+    ]
+  },
+  {
+    id: "pc-theron",
+    name: "Theron Stormwind",
+    playerName: "Player 2",
+    characterClass: "Rogue",
+    level: 1,
+    maxHp: 10,
+    currentHp: 10,
+    tempHp: 5,
+    armorClass: 14,
+    initiativeModifier: 3,
+    passivePerception: 14,
+    speed: 30,
+    spellDc: null,
+    notes: "Stealthy skirmisher dealing precision Sneak Attacks and navigating danger.",
+    abilities: [
+      { id: "ab-3", name: "Sneak Attack", type: "Feat / Trait", description: "Feat / Trait • +1d6 damage when you hit with advantage or ally within 5ft." },
+      { id: "ab-4", name: "Cunning Action", type: "Bonus Action", description: "Bonus Action • Take Dash, Disengage, or Hide as a bonus action." }
+    ]
+  }
 ];
 
+// Initial Encounter matching Screenshots (Vesper, Theron, Bandit #1, Bandit #2)
+function getInitialEncounter() {
+  return {
+    round: 1,
+    currentTurnIndex: 0,
+    isCombatStarted: true,
+    combatants: [
+      {
+        id: "c-vesper",
+        characterId: "pc-vesper",
+        name: "Vesper Stonefist",
+        isPlayer: true,
+        characterClassOrType: "Fighter (Lvl 1)",
+        maxHp: 12,
+        currentHp: 12,
+        tempHp: 0,
+        armorClass: 18,
+        baseArmorClass: 18,
+        coverType: "NONE",
+        initiativeModifier: 3,
+        initiativeRoll: 18,
+        speed: 30,
+        baseSpeed: 30,
+        isDifficultTerrain: false,
+        spellDc: null,
+        notes: "Heavy armor vanguard shielding the party in combat.",
+        abilities: [
+          { id: "ab-1", name: "Second Wind", type: "Bonus Action", description: "Bonus Action • Regain 1d10 + level HP once per short rest." },
+          { id: "ab-2", name: "Action Surge", type: "Action", description: "Action • Take 1 additional action on your turn. 1/short rest." }
+        ],
+        conditions: [],
+        deathSavesSuccess: 0,
+        deathSavesFailure: 0,
+        isStabilized: false,
+        isDead: false
+      },
+      {
+        id: "c-bandit-2",
+        name: "Bandit #2",
+        isPlayer: false,
+        characterClassOrType: "Enemy (CR 1/8)",
+        maxHp: 11,
+        currentHp: 11,
+        tempHp: 0,
+        armorClass: 12,
+        baseArmorClass: 12,
+        coverType: "NONE",
+        initiativeModifier: 1,
+        initiativeRoll: 16,
+        speed: 30,
+        baseSpeed: 30,
+        isDifficultTerrain: false,
+        spellDc: null,
+        notes: "Scimitar +3 (1d6+1). Light Crossbow",
+        abilities: [],
+        conditions: [],
+        deathSavesSuccess: 0,
+        deathSavesFailure: 0,
+        isStabilized: false,
+        isDead: false
+      },
+      {
+        id: "c-theron",
+        characterId: "pc-theron",
+        name: "Theron Stormwind",
+        isPlayer: true,
+        characterClassOrType: "Rogue (Lvl 1)",
+        maxHp: 10,
+        currentHp: 10,
+        tempHp: 5,
+        armorClass: 16,
+        baseArmorClass: 14,
+        coverType: "HALF",
+        initiativeModifier: 3,
+        initiativeRoll: 15,
+        speed: 15,
+        baseSpeed: 30,
+        isDifficultTerrain: true,
+        spellDc: null,
+        notes: "Stealthy skirmisher dealing precision Sneak Attacks and navigating danger.",
+        abilities: [
+          { id: "ab-3", name: "Sneak Attack", type: "Feat / Trait", description: "Feat / Trait • +1d6 damage when you hit with advantage or ally within 5ft." },
+          { id: "ab-4", name: "Cunning Action", type: "Bonus Action", description: "Bonus Action • Take Dash, Disengage, or Hide as a bonus action." }
+        ],
+        conditions: ["half_cover", "difficult_terrain"],
+        deathSavesSuccess: 0,
+        deathSavesFailure: 0,
+        isStabilized: false,
+        isDead: false
+      },
+      {
+        id: "c-bandit-1",
+        name: "Bandit #1",
+        isPlayer: false,
+        characterClassOrType: "Enemy (CR 1/8)",
+        maxHp: 11,
+        currentHp: 11,
+        tempHp: 0,
+        armorClass: 12,
+        baseArmorClass: 12,
+        coverType: "NONE",
+        initiativeModifier: 1,
+        initiativeRoll: 10,
+        speed: 30,
+        baseSpeed: 30,
+        isDifficultTerrain: false,
+        spellDc: null,
+        notes: "Scimitar +3 (1d6+1). Light Crossbow",
+        abilities: [],
+        conditions: [],
+        deathSavesSuccess: 0,
+        deathSavesFailure: 0,
+        isStabilized: false,
+        isDead: false
+      }
+    ],
+    log: [
+      { id: "log-1", round: 1, time: "10:50 AM", text: "⚔️ Combat Started! Round 1 begins. Vesper Stonefist's turn.", type: "turn" }
+    ]
+  };
+}
+
 // ==========================================
-// STATE STORE
+// STORE & PERSISTENCE
 // ==========================================
 
-class CombatTrackerStore {
+class DndStore {
   constructor() {
-    this.currentTab = "combat";
-    this.party = this.loadFromStorage("dnd_party", DEFAULT_PARTY);
-    this.encounter = this.loadFromStorage("dnd_encounter", {
-      round: 1,
-      currentTurnIndex: 0,
-      isCombatStarted: false,
-      combatants: [],
-      log: []
-    });
-    this.diceHistory = this.loadFromStorage("dnd_dice_history", []);
+    this.currentTab = "combat"; // "combat", "party", "bestiary", "dice"
+    this.party = this.load("dnd_party_v2", DEFAULT_PARTY);
+    this.encounter = this.load("dnd_encounter_v2", getInitialEncounter());
+    this.diceHistory = this.load("dnd_dice_hist_v2", []);
     this.lastRoll = null;
 
-    // Bestiary UI State
-    this.bestiarySearch = "";
-    this.bestiaryCategory = "All";
-
-    // Dice State
-    this.diceCount = 1;
-    this.diceModifier = 0;
-    this.d20RollMode = "NORMAL"; // NORMAL, ADVANTAGE, DISADVANTAGE
-
-    // Active Modal Target
+    // Active edit targets for dialogs
     this.activeCombatantId = null;
+    this.characterEditTargetId = null;
+    this.characterAbilitiesEditing = [];
+
+    // Temporary values for open dialogs
+    this.dialogSpeedBase = 30;
+    this.dialogSpeedDiff = false;
+    this.dialogAcBase = 14;
+    this.dialogAcCover = "NONE";
   }
 
-  loadFromStorage(key, fallback) {
+  load(key, fallback) {
     try {
       const data = localStorage.getItem(key);
       return data ? JSON.parse(data) : fallback;
     } catch (e) {
-      console.error("Storage load error:", e);
       return fallback;
     }
   }
 
-  saveToStorage() {
+  save() {
     try {
-      localStorage.setItem("dnd_party", JSON.stringify(this.party));
-      localStorage.setItem("dnd_encounter", JSON.stringify(this.encounter));
-      localStorage.setItem("dnd_dice_history", JSON.stringify(this.diceHistory));
-    } catch (e) {
-      console.error("Storage save error:", e);
-    }
+      localStorage.setItem("dnd_party_v2", JSON.stringify(this.party));
+      localStorage.setItem("dnd_encounter_v2", JSON.stringify(this.encounter));
+      localStorage.setItem("dnd_dice_hist_v2", JSON.stringify(this.diceHistory));
+    } catch (e) {}
   }
 
   logEvent(text, type = "info") {
     const entry = {
-      id: "log-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      id: "log-" + Date.now(),
       round: this.encounter.round,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       text: text,
       type: type
     };
     this.encounter.log = [entry, ...this.encounter.log].slice(0, 50);
-    this.saveToStorage();
+    this.save();
   }
 }
 
-const store = new CombatTrackerStore();
+const store = new DndStore();
 
 // ==========================================
-// HELPER UTILITIES
+// UTILITY FUNCTIONS
 // ==========================================
 
 function rollD20() {
@@ -142,18 +297,17 @@ function rollDie(sides) {
   return Math.floor(Math.random() * sides) + 1;
 }
 
-function showToast(message) {
+function showToast(text) {
   const container = document.getElementById("toast-container");
   if (!container) return;
-  const toast = document.createElement("div");
-  toast.className = "toast";
-  toast.textContent = message;
-  container.appendChild(toast);
+  const t = document.createElement("div");
+  t.className = "toast-item";
+  t.textContent = text;
+  container.appendChild(t);
   setTimeout(() => {
-    toast.style.opacity = "0";
-    toast.style.transform = "translateY(10px)";
-    setTimeout(() => toast.remove(), 250);
-  }, 2400);
+    t.style.opacity = "0";
+    setTimeout(() => t.remove(), 250);
+  }, 2200);
 }
 
 function sortCombatants(list) {
@@ -168,140 +322,30 @@ function sortCombatants(list) {
   });
 }
 
-function getHpBarColor(current, max) {
-  if (max <= 0) return "#475569";
-  const pct = current / max;
-  if (current <= 0) return "#475569";
-  if (pct > 0.5) return "var(--color-hp-green)";
-  if (pct > 0.25) return "var(--color-hp-amber)";
-  return "var(--color-hp-red)";
-}
-
 // ==========================================
-// ENCOUNTER ACTIONS
+// COMBAT & TURN PROGRESSION
 // ==========================================
-
-function addPlayerToEncounter(character, rollInit = false, manualInit = 0) {
-  const initScore = rollInit ? (rollD20() + character.initiativeModifier) : manualInit;
-  const combatant = {
-    id: "c-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
-    characterId: character.id,
-    name: character.name,
-    isPlayer: true,
-    characterClassOrType: `${character.characterClass} (Lvl ${character.level})`,
-    maxHp: character.maxHp,
-    currentHp: character.currentHp,
-    tempHp: character.tempHp || 0,
-    armorClass: character.armorClass,
-    baseArmorClass: character.armorClass,
-    coverType: "NONE",
-    initiativeModifier: character.initiativeModifier,
-    initiativeRoll: initScore,
-    passivePerception: character.passivePerception,
-    speed: character.speed,
-    baseSpeed: character.speed,
-    isDifficultTerrain: false,
-    spellDc: character.spellDc,
-    notes: character.notes || "",
-    abilitiesAndFeats: character.abilitiesAndFeats || character.notes || "",
-    conditions: [],
-    deathSavesSuccess: 0,
-    deathSavesFailure: 0,
-    isStabilized: false,
-    isDead: false
-  };
-
-  // Prevent duplicate PC
-  store.encounter.combatants = store.encounter.combatants.filter(c => c.characterId !== character.id);
-  store.encounter.combatants.push(combatant);
-  if (store.encounter.isCombatStarted) {
-    store.encounter.combatants = sortCombatants(store.encounter.combatants);
-  }
-  store.logEvent(`Added ${character.name} to encounter`, "info");
-  store.saveToStorage();
-  renderApp();
-  showToast(`Added ${character.name}`);
-}
-
-function addAllPartyToEncounter() {
-  if (store.party.length === 0) {
-    showToast("Party is empty! Add characters first.");
-    return;
-  }
-  store.party.forEach(pc => {
-    addPlayerToEncounter(pc, false, 0);
-  });
-  store.logEvent("Added full party to combat encounter (set initiatives when ready)", "info");
-  renderApp();
-  showToast("All party members added to arena!");
-}
-
-function addEnemyToEncounter(name, hp, ac, initMod, count = 1, rollInit = true, cr = "", notes = "", speed = 30, spellDc = null) {
-  const newCombatants = [];
-  for (let i = 1; i <= count; i++) {
-    const enemyName = count > 1 ? `${name} #${i}` : name;
-    const initScore = rollInit ? (rollD20() + initMod) : (10 + initMod);
-    newCombatants.push({
-      id: "enemy-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5) + "-" + i,
-      name: enemyName,
-      isPlayer: false,
-      characterClassOrType: cr ? `Enemy (${cr})` : "Enemy",
-      maxHp: hp,
-      currentHp: hp,
-      tempHp: 0,
-      armorClass: ac,
-      baseArmorClass: ac,
-      coverType: "NONE",
-      initiativeModifier: initMod,
-      initiativeRoll: initScore,
-      passivePerception: 10,
-      speed: speed,
-      baseSpeed: speed,
-      isDifficultTerrain: false,
-      spellDc: spellDc,
-      notes: notes,
-      abilitiesAndFeats: notes,
-      conditions: [],
-      deathSavesSuccess: 0,
-      deathSavesFailure: 0,
-      isStabilized: false,
-      isDead: false
-    });
-  }
-
-  store.encounter.combatants.push(...newCombatants);
-  if (store.encounter.isCombatStarted) {
-    store.encounter.combatants = sortCombatants(store.encounter.combatants);
-  }
-  store.logEvent(`Added ${count > 1 ? `${count}x ${name}` : name} to encounter`, "info");
-  store.saveToStorage();
-  renderApp();
-  showToast(`Added ${count > 1 ? `${count}x ${name}` : name}`);
-}
 
 function startCombat() {
   if (store.encounter.combatants.length === 0) {
-    showToast("Add combatants before starting combat!");
+    showToast("Add combatants to start combat");
     return;
   }
-
-  // Auto-roll monsters initiative if they are at 0 or unrolled
+  // Auto-roll monsters initiative
   store.encounter.combatants = store.encounter.combatants.map(c => {
     if (!c.isPlayer) {
       return { ...c, initiativeRoll: rollD20() + c.initiativeModifier };
     }
     return c;
   });
-
   store.encounter.combatants = sortCombatants(store.encounter.combatants);
-  const firstLiving = store.encounter.combatants.findIndex(c => !c.isDead);
   store.encounter.round = 1;
-  store.encounter.currentTurnIndex = firstLiving >= 0 ? firstLiving : 0;
+  store.encounter.currentTurnIndex = 0;
   store.encounter.isCombatStarted = true;
 
-  const actor = store.encounter.combatants[store.encounter.currentTurnIndex]?.name || "Unknown";
+  const actor = store.encounter.combatants[0]?.name || "";
   store.logEvent(`⚔️ Combat Started! Round 1 begins. ${actor}'s turn.`, "turn");
-  store.saveToStorage();
+  store.save();
   renderApp();
   showToast("⚔️ Combat Started!");
 }
@@ -309,9 +353,6 @@ function startCombat() {
 function nextTurn() {
   const total = store.encounter.combatants.length;
   if (total === 0) return;
-  const hasLiving = store.encounter.combatants.some(c => !c.isDead);
-  if (!hasLiving) return;
-
   let nextIdx = store.encounter.currentTurnIndex;
   let nextRound = store.encounter.round;
   let attempts = 0;
@@ -333,16 +374,13 @@ function nextTurn() {
   if (actor && !actor.isDead) {
     store.logEvent(`Turn passed to ${actor.name}`, "turn");
   }
-  store.saveToStorage();
+  store.save();
   renderApp();
 }
 
-function previousTurn() {
+function prevTurn() {
   const total = store.encounter.combatants.length;
   if (total === 0) return;
-  const hasLiving = store.encounter.combatants.some(c => !c.isDead);
-  if (!hasLiving) return;
-
   let prevIdx = store.encounter.currentTurnIndex;
   let prevRound = store.encounter.round;
   let attempts = 0;
@@ -363,48 +401,52 @@ function previousTurn() {
 
   store.encounter.currentTurnIndex = prevIdx;
   store.encounter.round = prevRound;
-  store.saveToStorage();
+  store.save();
   renderApp();
 }
 
 function endCombat() {
   store.encounter.isCombatStarted = false;
   store.logEvent("🏁 Combat ended.", "info");
-  store.saveToStorage();
+  store.save();
   renderApp();
   showToast("Combat ended");
 }
 
-function clearEncounter() {
-  if (!confirm("Reset encounter and clear all combatants from the arena?")) return;
-  store.encounter = {
-    round: 1,
-    currentTurnIndex: 0,
-    isCombatStarted: false,
-    combatants: [],
-    log: []
-  };
-  store.logEvent("Encounter reset and arena cleared", "info");
-  store.saveToStorage();
-  renderApp();
-  showToast("Encounter reset");
-}
-
 function removeCombatant(id) {
-  const combatant = store.encounter.combatants.find(c => c.id === id);
-  store.encounter.combatants = store.encounter.combatants.filter(c => c.id !== id);
+  const c = store.encounter.combatants.find(x => x.id === id);
+  store.encounter.combatants = store.encounter.combatants.filter(x => x.id !== id);
   if (store.encounter.currentTurnIndex >= store.encounter.combatants.length) {
     store.encounter.currentTurnIndex = Math.max(0, store.encounter.combatants.length - 1);
   }
-  if (combatant) {
-    store.logEvent(`Removed ${combatant.name} from combat`, "info");
-  }
-  store.saveToStorage();
+  if (c) store.logEvent(`Removed ${c.name} from combat`, "info");
+  store.save();
   renderApp();
 }
 
+function rollMonstersInitiative() {
+  store.encounter.combatants = store.encounter.combatants.map(c => {
+    if (!c.isPlayer) {
+      return { ...c, initiativeRoll: rollD20() + c.initiativeModifier };
+    }
+    return c;
+  });
+  if (store.encounter.isCombatStarted) {
+    const activeId = store.encounter.combatants[store.encounter.currentTurnIndex]?.id;
+    store.encounter.combatants = sortCombatants(store.encounter.combatants);
+    if (activeId) {
+      const idx = store.encounter.combatants.findIndex(c => c.id === activeId);
+      if (idx >= 0) store.encounter.currentTurnIndex = idx;
+    }
+  }
+  store.logEvent("Rolled initiative for all monsters", "info");
+  store.save();
+  renderApp();
+  showToast("Rolled monsters initiative");
+}
+
 // ==========================================
-// HP, DAMAGE & HEALING ENGINE
+// HP, DAMAGE & HEALING
 // ==========================================
 
 function applyDamage(combatantId, amount) {
@@ -430,43 +472,18 @@ function applyDamage(combatantId, amount) {
 
     const afterHp = Math.max(0, c.currentHp - damageRemaining);
     finalHp = afterHp;
-
-    let fails = c.deathSavesFailure || 0;
-    let isDead = c.isDead;
-    let isStabilized = c.isStabilized;
     let conditions = [...(c.conditions || [])];
-
-    // If player takes damage at 0 HP -> automatic failed death save
-    if (c.isPlayer && c.currentHp === 0 && afterHp === 0) {
-      fails = Math.min(3, fails + 1);
-      isStabilized = false;
-      if (fails >= 3) {
-        isDead = true;
-        if (!conditions.includes("dead")) conditions.push("dead");
-      }
-    }
-
-    // Auto add unconscious if dropped to 0
-    if (c.isPlayer && afterHp === 0 && !conditions.includes("unconscious")) {
-      conditions.push("unconscious");
-    }
 
     return {
       ...c,
       currentHp: afterHp,
       tempHp: currentTemp,
-      deathSavesFailure: fails,
-      isStabilized: isStabilized,
-      isDead: isDead,
       conditions: conditions
     };
   });
 
   store.logEvent(`${targetName} took ${amount} damage! (HP: ${finalHp})`, "damage");
-  if (finalHp === 0) {
-    store.logEvent(`💀 ${targetName} dropped to 0 HP!`, "death");
-  }
-  store.saveToStorage();
+  store.save();
   renderApp();
 }
 
@@ -480,322 +497,19 @@ function applyHealing(combatantId, amount) {
     targetName = c.name;
     const healed = Math.min(c.maxHp, c.currentHp + amount);
     finalHp = healed;
-    let conditions = (c.conditions || []).filter(cond => cond !== "dead" && cond !== "unconscious");
-
     return {
       ...c,
-      currentHp: healed,
-      deathSavesSuccess: healed > 0 ? 0 : c.deathSavesSuccess,
-      deathSavesFailure: healed > 0 ? 0 : c.deathSavesFailure,
-      isStabilized: healed > 0 ? false : c.isStabilized,
-      isDead: healed > 0 ? false : c.isDead,
-      conditions: healed > 0 ? conditions : c.conditions
+      currentHp: healed
     };
   });
 
   store.logEvent(`✨ ${targetName} healed ${amount} HP! (HP: ${finalHp})`, "heal");
-  store.saveToStorage();
-  renderApp();
-}
-
-function setTempHp(combatantId, amount) {
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    if (c.id === combatantId) {
-      store.logEvent(`${c.name} gained ${amount} Temp HP`, "info");
-      return { ...c, tempHp: Math.max(0, amount) };
-    }
-    return c;
-  });
-  store.saveToStorage();
-  renderApp();
-}
-
-function setHpDirect(combatantId, newHp) {
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    if (c.id === combatantId) {
-      const finalHp = Math.max(0, Math.min(c.maxHp, newHp));
-      store.logEvent(`Set ${c.name} HP to ${finalHp}`, "info");
-      return {
-        ...c,
-        currentHp: finalHp,
-        deathSavesSuccess: finalHp > 0 ? 0 : c.deathSavesSuccess,
-        deathSavesFailure: finalHp > 0 ? 0 : c.deathSavesFailure
-      };
-    }
-    return c;
-  });
-  store.saveToStorage();
-  renderApp();
-}
-
-function recordDeathSave(combatantId, isSuccess) {
-  let targetName = "";
-  let succ = 0;
-  let fail = 0;
-  let stabilized = false;
-  let died = false;
-
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    if (c.id !== combatantId) return c;
-    targetName = c.name;
-    succ = isSuccess ? Math.min(3, (c.deathSavesSuccess || 0) + 1) : (c.deathSavesSuccess || 0);
-    fail = !isSuccess ? Math.min(3, (c.deathSavesFailure || 0) + 1) : (c.deathSavesFailure || 0);
-
-    const conditions = [...(c.conditions || [])];
-    let isStabilized = c.isStabilized;
-    let isDead = c.isDead;
-
-    if (succ >= 3) {
-      isStabilized = true;
-      stabilized = true;
-      if (!conditions.includes("unconscious")) conditions.push("unconscious");
-    }
-    if (fail >= 3) {
-      isDead = true;
-      died = true;
-      if (!conditions.includes("dead")) conditions.push("dead");
-    }
-
-    return {
-      ...c,
-      deathSavesSuccess: succ,
-      deathSavesFailure: fail,
-      isStabilized: isStabilized,
-      isDead: isDead,
-      conditions: conditions
-    };
-  });
-
-  if (isSuccess) {
-    store.logEvent(`💚 ${targetName} passed a Death Save (${succ}/3)`, "info");
-    if (stabilized) {
-      store.logEvent(`🌟 ${targetName} has STABILIZED at 0 HP (Unconscious)!`, "heal");
-    }
-  } else {
-    store.logEvent(`💔 ${targetName} FAILED a Death Save (${fail}/3)`, "damage");
-    if (died) {
-      store.logEvent(`💀 ${targetName} has DIED (3 Failed Death Saves) and will be skipped in turns!`, "death");
-    }
-  }
-
-  store.saveToStorage();
-  renderApp();
-}
-
-function reviveCombatant(combatantId) {
-  let name = "";
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    if (c.id === combatantId) {
-      name = c.name;
-      const conditions = (c.conditions || []).filter(cond => cond !== "dead" && cond !== "unconscious");
-      return {
-        ...c,
-        currentHp: 1,
-        isDead: false,
-        isStabilized: false,
-        deathSavesSuccess: 0,
-        deathSavesFailure: 0,
-        conditions: conditions
-      };
-    }
-    return c;
-  });
-  store.logEvent(`✨ ${name} has been REVIVED with 1 HP!`, "heal");
-  store.saveToStorage();
-  renderApp();
-  showToast(`✨ ${name} revived!`);
-}
-
-// ==========================================
-// AC, COVER & SPEED ENGINE
-// ==========================================
-
-function updateArmorClass(combatantId, baseAc, coverType) {
-  const bonus = coverType === "HALF" ? 2 : coverType === "THREE_QUARTERS" ? 5 : coverType === "TOTAL" ? 10 : 0;
-  const effectiveAc = Math.max(1, baseAc + bonus);
-
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    if (c.id === combatantId) {
-      let conditions = (c.conditions || []).filter(cond => !["half_cover", "three_quarters_cover", "total_cover"].includes(cond));
-      if (coverType === "HALF") conditions.push("half_cover");
-      if (coverType === "THREE_QUARTERS") conditions.push("three_quarters_cover");
-      if (coverType === "TOTAL") conditions.push("total_cover");
-
-      store.logEvent(`Updated ${c.name} AC to ${effectiveAc} (${coverType})`, "info");
-      return {
-        ...c,
-        baseArmorClass: baseAc,
-        armorClass: effectiveAc,
-        coverType: coverType,
-        conditions: conditions
-      };
-    }
-    return c;
-  });
-  store.saveToStorage();
-  renderApp();
-}
-
-function updateSpeed(combatantId, baseSpeed, isDifficult) {
-  const effectiveSpeed = isDifficult ? Math.floor(baseSpeed / 2) : baseSpeed;
-
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    if (c.id === combatantId) {
-      let conditions = (c.conditions || []).filter(cond => cond !== "difficult_terrain");
-      if (isDifficult) conditions.push("difficult_terrain");
-
-      store.logEvent(`Updated ${c.name} Speed to ${effectiveSpeed}ft ${isDifficult ? "(Difficult Terrain)" : ""}`, "info");
-      return {
-        ...c,
-        baseSpeed: baseSpeed,
-        speed: effectiveSpeed,
-        isDifficultTerrain: isDifficult,
-        conditions: conditions
-      };
-    }
-    return c;
-  });
-  store.saveToStorage();
-  renderApp();
-}
-
-function toggleCondition(combatantId, conditionId) {
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    if (c.id !== combatantId) return c;
-    const condList = [...(c.conditions || [])];
-    const exists = condList.includes(conditionId);
-    let updated = exists ? condList.filter(id => id !== conditionId) : [...condList, conditionId];
-
-    // Mechanics hook for conditions
-    let newAc = c.armorClass;
-    let newSpeed = c.speed;
-    let newCover = c.coverType;
-    let newDiff = c.isDifficultTerrain;
-
-    if (conditionId === "difficult_terrain") {
-      newDiff = !exists;
-      newSpeed = newDiff ? Math.floor(c.baseSpeed / 2) : c.baseSpeed;
-    } else if (conditionId === "half_cover") {
-      newCover = !exists ? "HALF" : "NONE";
-      newAc = c.baseArmorClass + (!exists ? 2 : 0);
-    } else if (conditionId === "three_quarters_cover") {
-      newCover = !exists ? "THREE_QUARTERS" : "NONE";
-      newAc = c.baseArmorClass + (!exists ? 5 : 0);
-    } else if (conditionId === "total_cover") {
-      newCover = !exists ? "TOTAL" : "NONE";
-      newAc = c.baseArmorClass + (!exists ? 10 : 0);
-    }
-
-    const condObj = CONDITIONS.find(cn => cn.id === conditionId);
-    store.logEvent(`${exists ? "Removed" : "Applied"} ${condObj ? condObj.name : conditionId} to ${c.name}`, "condition");
-
-    return {
-      ...c,
-      conditions: updated,
-      armorClass: newAc,
-      speed: newSpeed,
-      coverType: newCover,
-      isDifficultTerrain: newDiff
-    };
-  });
-  store.saveToStorage();
-  renderApp();
-}
-
-function setInitiative(combatantId, score) {
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    if (c.id === combatantId) {
-      store.logEvent(`Set ${c.name} initiative to ${score}`, "info");
-      return { ...c, initiativeRoll: score };
-    }
-    return c;
-  });
-  if (store.encounter.isCombatStarted) {
-    const activeId = store.encounter.combatants[store.encounter.currentTurnIndex]?.id;
-    store.encounter.combatants = sortCombatants(store.encounter.combatants);
-    if (activeId) {
-      const newIdx = store.encounter.combatants.findIndex(c => c.id === activeId);
-      if (newIdx >= 0) store.encounter.currentTurnIndex = newIdx;
-    }
-  }
-  store.saveToStorage();
-  renderApp();
-}
-
-function rollMonstersInitiative() {
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    if (!c.isPlayer) {
-      return { ...c, initiativeRoll: rollD20() + c.initiativeModifier };
-    }
-    return c;
-  });
-  if (store.encounter.isCombatStarted) {
-    store.encounter.combatants = sortCombatants(store.encounter.combatants);
-  }
-  store.logEvent("Rolled initiative for all monsters", "info");
-  store.saveToStorage();
-  renderApp();
-  showToast("Rolled monsters initiative");
-}
-
-function rerollAllInitiatives() {
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    return { ...c, initiativeRoll: rollD20() + c.initiativeModifier };
-  });
-  store.encounter.combatants = sortCombatants(store.encounter.combatants);
-  store.encounter.currentTurnIndex = 0;
-  store.logEvent("Rerolled initiative for all combatants", "info");
-  store.saveToStorage();
-  renderApp();
-  showToast("Rerolled all initiatives");
-}
-
-// ==========================================
-// DICE ROLLER ENGINE
-// ==========================================
-
-function rollDice(sides, count = 1, modifier = 0, mode = "NORMAL") {
-  const rolls = [];
-  let discarded = null;
-
-  if (sides === 20 && count === 1 && mode !== "NORMAL") {
-    const r1 = rollDie(20);
-    const r2 = rollDie(20);
-    const chosen = mode === "ADVANTAGE" ? Math.max(r1, r2) : Math.min(r1, r2);
-    discarded = mode === "ADVANTAGE" ? Math.min(r1, r2) : Math.max(r1, r2);
-    rolls.push(chosen);
-  } else {
-    for (let i = 0; i < count; i++) {
-      rolls.push(rollDie(sides));
-    }
-  }
-
-  const sum = rolls.reduce((a, b) => a + b, 0);
-  const total = sum + modifier;
-  const isNat20 = sides === 20 && rolls.includes(20);
-  const isNat1 = sides === 20 && rolls.includes(1);
-
-  const result = {
-    id: "dice-" + Date.now(),
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-    dice: `${count}d${sides}`,
-    total: total,
-    rolls: rolls,
-    modifier: modifier,
-    mode: mode,
-    discarded: discarded,
-    isNat20: isNat20,
-    isNat1: isNat1
-  };
-
-  store.lastRoll = result;
-  store.diceHistory = [result, ...store.diceHistory].slice(0, 30);
-  store.saveToStorage();
+  store.save();
   renderApp();
 }
 
 // ==========================================
-// HTML RENDERING & VIEW GENERATION
+// RENDERING VIEWS
 // ==========================================
 
 function renderApp() {
@@ -804,1031 +518,1202 @@ function renderApp() {
 
   switch (store.currentTab) {
     case "combat":
-      container.innerHTML = renderCombatArena();
+      container.innerHTML = renderCombatScreen();
       break;
     case "party":
-      container.innerHTML = renderPartyRoster();
+      container.innerHTML = renderPartyScreen();
       break;
     case "bestiary":
-      container.innerHTML = renderBestiary();
+      container.innerHTML = renderBestiaryScreen();
       break;
     case "dice":
-      container.innerHTML = renderDiceAndRules();
+      container.innerHTML = renderDiceScreen();
       break;
   }
 
-  // Update active states on nav items
-  document.querySelectorAll(".nav-tab-btn, .mobile-nav-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.tab === store.currentTab);
+  // Update Bottom Nav active state
+  document.querySelectorAll(".nav-tab-item").forEach(item => {
+    item.classList.toggle("active", item.dataset.tab === store.currentTab);
   });
 }
 
-// --- Screen 1: Combat Arena ---
-function renderCombatArena() {
+// ------------------------------------------
+// COMBAT SCREEN (Screenshots 1 & 6)
+// ------------------------------------------
+function renderCombatScreen() {
   const enc = store.encounter;
   const combatants = enc.combatants;
-  const activeCombatant = combatants[enc.currentTurnIndex] || null;
+  const active = combatants[enc.currentTurnIndex] || null;
+  const onDeck = combatants.length > 1 ? combatants[(enc.currentTurnIndex + 1) % combatants.length] : null;
+
+  const playerCount = combatants.filter(c => c.isPlayer).length;
+  const enemyCount = combatants.filter(c => !c.isPlayer).length;
 
   return `
-    <!-- Hero Header / Arena Status -->
-    <div class="arena-hero">
-      <img src="assets/banner.jpg" class="arena-hero-bg" alt="D&D Arena Banner" onerror="this.style.display='none'">
-      <div class="arena-hero-content">
-        <div class="arena-round-badge">
-          <div class="round-shield">
-            <span class="round-shield-label">Round</span>
-            <span class="round-shield-num">${enc.round}</span>
+    <!-- Top Header Card (Screenshot: Round 1, 2 PCs • 2 Foes, Dice, Clock, Add) -->
+    <div class="arena-header-card">
+      <div class="arena-header-top-row">
+        <div style="display: flex; align-items: center;">
+          <div class="round-indicator-pill">
+            <span>⚔️</span>
+            <span>Round ${enc.round}</span>
           </div>
-          <div class="arena-turn-info">
-            <span class="arena-turn-label">${enc.isCombatStarted ? "Active Turn" : "Preparation Phase"}</span>
-            <span class="arena-turn-name">${enc.isCombatStarted && activeCombatant ? activeCombatant.name : "Combat not started"}</span>
+          <span class="arena-counts-text">${playerCount} PCs • ${enemyCount} Foes</span>
+        </div>
+
+        <div class="arena-top-actions">
+          <button class="icon-btn-header gold" onclick="store.currentTab = 'dice'; renderApp();" title="Dice Roller">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
+          </button>
+          <button class="icon-btn-header" onclick="openLogModal()" title="Combat Log">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+          </button>
+          <button class="icon-btn-header crimson" onclick="openAddEnemyModal()" title="Add Enemy">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Turn Controls Row (Prev, Next Turn, Stop) -->
+      <div class="turn-controls-row">
+        <button class="btn-prev-turn" onclick="prevTurn()">
+          <span>|◀</span>
+          <span>Prev</span>
+        </button>
+        <button class="btn-next-turn" onclick="nextTurn()">
+          <span>Next Turn</span>
+          <span>▶|</span>
+        </button>
+        <button class="btn-stop-combat" onclick="endCombat()" title="End Combat">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- CURRENT TURN SPOTLIGHT CARD (Screenshot 1 & 6) -->
+    ${active ? `
+      <div class="current-turn-card">
+        <!-- Top row: CURRENT TURN, Player/Monster, On Deck -->
+        <div class="current-turn-top-row">
+          <div class="current-turn-badges">
+            <span class="badge-current-turn">CURRENT TURN</span>
+            <span class="badge-player-indicator ${active.isPlayer ? "" : "monster"}">
+              ${active.isPlayer ? "🛡️ Player" : "👹 Monster"}
+            </span>
+          </div>
+          ${onDeck ? `<span class="on-deck-text">On Deck: ${onDeck.name}</span>` : ""}
+        </div>
+
+        <!-- Name & Squircles for AC, INIT, SPD -->
+        <div class="turn-name-and-stats">
+          <div class="turn-name-group">
+            <span class="turn-name-title">${active.name}</span>
+            <span class="turn-name-class">${active.characterClassOrType}</span>
+          </div>
+
+          <div class="turn-stats-squircles">
+            <div class="stat-squircle" onclick="openAcModal('${active.id}')" title="Edit AC">
+              <span class="stat-squircle-label">AC</span>
+              <span class="stat-squircle-val">${active.armorClass}</span>
+            </div>
+            <div class="stat-squircle" onclick="openInitModal('${active.id}')" title="Edit Initiative">
+              <span class="stat-squircle-label">INIT</span>
+              <span class="stat-squircle-val">${active.initiativeRoll}</span>
+            </div>
+            <div class="stat-squircle" onclick="openSpeedModal('${active.id}')" title="Edit Speed">
+              <span class="stat-squircle-label">SPD</span>
+              <span class="stat-squircle-val">${active.speed}ft</span>
+            </div>
           </div>
         </div>
 
-        <div class="arena-controls">
-          ${!enc.isCombatStarted ? `
-            <button class="btn btn-primary" onclick="startCombat()">
-              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-              <span>Start Combat</span>
-            </button>
+        <!-- HP Row & Quick Chips (-5, -1, +1, +5) -->
+        <div class="turn-hp-row">
+          <div class="hp-main-label" onclick="openDamageHealModal('${active.id}')">
+            <span>HP:</span>
+            <span class="hp-current-num ${active.currentHp <= 3 ? "red" : active.currentHp <= 6 ? "low" : ""}">${active.currentHp}</span>
+            <span>/ ${active.maxHp}</span>
+            ${active.tempHp > 0 ? `
+              <span class="temp-hp-pill-tag">🛡️ +${active.tempHp} Temp HP</span>
+            ` : ""}
+          </div>
+
+          <div class="quick-hp-chips-group">
+            <button class="chip-quick-hp dmg" onclick="applyDamage('${active.id}', 5)">-5</button>
+            <button class="chip-quick-hp dmg" onclick="applyDamage('${active.id}', 1)">-1</button>
+            <button class="chip-quick-hp heal" onclick="applyHealing('${active.id}', 1)">+1</button>
+            <button class="chip-quick-hp heal" onclick="applyHealing('${active.id}', 5)">+5</button>
+          </div>
+        </div>
+
+        <!-- HP Bar with Temp HP overlay -->
+        <div class="unified-hp-bar" onclick="openDamageHealModal('${active.id}')">
+          <div class="unified-hp-fill ${active.currentHp <= 3 ? "red" : active.currentHp <= 6 ? "amber" : ""}" style="width: ${Math.min(100, Math.max(0, (active.currentHp / (active.maxHp || 1)) * 100))}%;"></div>
+          ${active.tempHp > 0 ? `
+            <div class="unified-hp-temp" style="width: ${Math.min(100, (active.tempHp / (active.maxHp || 1)) * 100)}%;"></div>
+          ` : ""}
+        </div>
+
+        <!-- 3 Big Action Buttons (💥 Damage, 💚 Heal, ✨ Condition) -->
+        <div class="turn-action-buttons-row">
+          <button class="btn-turn-action damage" onclick="openDamageHealModal('${active.id}')">
+            <span>💥 Damage</span>
+          </button>
+          <button class="btn-turn-action heal" onclick="openDamageHealModal('${active.id}')">
+            <span>💚 Heal</span>
+          </button>
+          <button class="btn-turn-action condition" onclick="openConditionsModal('${active.id}')">
+            <span>✨ Condition</span>
+          </button>
+        </div>
+
+        <!-- ABILITIES & ACTIONS SECTION -->
+        <div class="abilities-section-card">
+          <div class="abilities-section-header">
+            <span>⚡</span>
+            <span>ABILITIES & ACTIONS</span>
+          </div>
+
+          <!-- Dynamic character ability rows -->
+          ${(active.abilities && active.abilities.length > 0) ? active.abilities.map(ab => `
+            <div class="ability-item-row">
+              <div class="ability-title-line">
+                <span class="ability-type-badge ${ab.type.toLowerCase().includes('bonus') ? 'bonus' : ab.type.toLowerCase().includes('feat') ? 'feat' : ab.type.toLowerCase().includes('reaction') ? 'reaction' : 'action'}">
+                  ${ab.type.toUpperCase()}
+                </span>
+                <span class="ability-name-bold">⚡ ${ab.name}</span>
+              </div>
+              <span class="ability-desc-text">${ab.description}</span>
+            </div>
+          `).join("") : (active.notes ? `
+            <div class="ability-item-row">
+              <span class="ability-desc-text">📜 ${active.notes}</span>
+            </div>
           ` : `
-            <button class="btn btn-secondary btn-sm" onclick="previousTurn()" title="Previous Turn">
-              <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-              <span>Prev</span>
-            </button>
-            <button class="btn btn-primary" onclick="nextTurn()" title="Next Turn">
-              <span>Next Turn</span>
-              <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="endCombat()" title="End Combat">
-              <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
-              <span>End</span>
-            </button>
-          `}
-        </div>
-      </div>
-    </div>
+            <div class="ability-item-row">
+              <span class="ability-desc-text" style="color: var(--text-subtle);">No custom abilities specified for this character.</span>
+            </div>
+          `)}
 
-    <!-- Quick Action Bar -->
-    <div class="quick-action-bar">
-      <div class="quick-action-group">
-        <button class="btn btn-secondary btn-sm" onclick="openAddEnemyModal()">
-          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-          <span>+ Add Enemy</span>
-        </button>
-        <button class="btn btn-secondary btn-sm" onclick="addAllPartyToEncounter()">
-          <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-          <span>+ Add Party</span>
-        </button>
-        <button class="btn btn-secondary btn-sm" onclick="openPartyInitiativeModal()">
-          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
-          <span>Party Init</span>
-        </button>
-      </div>
-
-      <div class="quick-action-group">
-        <button class="btn btn-ghost btn-sm" onclick="rollMonstersInitiative()" title="Roll initiative for all enemies">
-          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
-          <span>Roll Enemies</span>
-        </button>
-        <button class="btn btn-ghost btn-sm" onclick="clearEncounter()" title="Clear arena">
-          <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-          <span>Reset</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Arena Split Grid (Desktop: Cards Left, Spotlight & Log Right) -->
-    <div class="arena-grid">
-      <!-- Left Column: Combatants List -->
-      <div class="combatant-list">
-        ${combatants.length === 0 ? `
-          <div class="card" style="text-align: center; padding: var(--space-xl) var(--space-md);">
-            <h3 style="color: var(--color-gold-light); margin-bottom: var(--space-xs);">Arena is Empty</h3>
-            <p style="color: var(--text-muted); font-size: var(--font-sm); margin-bottom: var(--space-md);">
-              Add player characters from your party or spawn enemies from the Bestiary to begin tracking combat.
-            </p>
-            <div style="display: flex; justify-content: center; gap: var(--space-sm); flex-wrap: wrap;">
-              <button class="btn btn-primary" onclick="addAllPartyToEncounter()">+ Add Party Members</button>
-              <button class="btn btn-secondary" onclick="openAddEnemyModal()">+ Add Monster</button>
+          <!-- 4 Equal Action Economy Boxes -->
+          <div class="action-economy-grid">
+            <div class="action-economy-box">
+              <div class="action-economy-title" style="color: var(--color-gold);">
+                <span>⚔️</span> Action
+              </div>
+              <span class="action-economy-desc">Attack, Cast, Dash, Disengage, Dodge, Help, Hide</span>
+            </div>
+            <div class="action-economy-box">
+              <div class="action-economy-title" style="color: #34d399;">
+                <span>⚡</span> Bonus
+              </div>
+              <span class="action-economy-desc">Bonus Spells, Offhand, Class feats</span>
+            </div>
+            <div class="action-economy-box">
+              <div class="action-economy-title" style="color: #60a5fa;">
+                <span>🛡️</span> Reaction
+              </div>
+              <span class="action-economy-desc">Opportunity Attack, Shield, Counter</span>
+            </div>
+            <div class="action-economy-box">
+              <div class="action-economy-title" style="color: #f1f5f9;">
+                <span>👟</span> Move
+              </div>
+              <span class="action-economy-desc">${active.speed}ft Speed (Walk, climb, swim)</span>
             </div>
           </div>
-        ` : combatants.map((c, idx) => renderCombatantCard(c, idx === enc.currentTurnIndex && enc.isCombatStarted)).join("")}
+        </div>
       </div>
+    ` : ""}
 
-      <!-- Right Column: Active Spotlight & Combat Log -->
-      <div class="arena-sidebar">
-        ${activeCombatant && enc.isCombatStarted ? `
-          <div class="active-spotlight-card">
-            <div class="spotlight-header">
-              <span class="spotlight-title">Active Combatant</span>
-              <span class="role-tag ${activeCombatant.isPlayer ? "player" : "monster"}">${activeCombatant.isPlayer ? "Player" : "Enemy"}</span>
+    <!-- INITIATIVE ORDER SECTION -->
+    <div class="initiative-section-header">
+      <span class="initiative-title">INITIATIVE ORDER (${combatants.length})</span>
+      <div class="initiative-header-actions">
+        <button class="btn-header-link gold" onclick="openPartyInitiativesModal()">
+          <span>🎲 Party Inits</span>
+        </button>
+        <button class="btn-header-link crimson" onclick="rollMonstersInitiative()">
+          <span>🔄 Roll Monsters</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Combatant List Cards -->
+    <div class="combatants-list-container">
+      ${combatants.map((c, index) => {
+        const isActiveCard = enc.isCombatStarted && index === enc.currentTurnIndex;
+        const isOnDeckCard = enc.isCombatStarted && combatants.length > 1 && index === ((enc.currentTurnIndex + 1) % combatants.length);
+        const hpPercent = Math.min(100, Math.max(0, (c.currentHp / (c.maxHp || 1)) * 100));
+
+        return `
+          <div class="combatant-list-card ${isActiveCard ? "active-turn" : ""} ${c.isDead ? "is-dead" : ""}" id="c-card-${c.id}">
+            <!-- Top Row: Circular Init, Name, Sub, AC Shield, Boot Speed, Remove X -->
+            <div class="combatant-card-top-row">
+              <div class="circular-init-badge" onclick="openInitModal('${c.id}')" title="Edit Initiative">
+                <span class="circular-init-num">${c.initiativeRoll}</span>
+                <span class="circular-init-label">INIT</span>
+              </div>
+
+              <div class="combatant-info-group">
+                <div class="combatant-name-and-badges">
+                  <span class="combatant-list-name">${c.name}</span>
+                  ${isOnDeckCard ? `<span class="badge-on-deck">ON DECK</span>` : ""}
+                </div>
+                <span class="combatant-list-sub">${c.characterClassOrType}</span>
+              </div>
+
+              <div class="combatant-right-pills">
+                <div class="pill-shield-ac" onclick="openAcModal('${c.id}')" title="Edit AC">
+                  <span>🛡️</span>
+                  <span>${c.armorClass}</span>
+                </div>
+                <div class="pill-boot-speed" onclick="openSpeedModal('${c.id}')" title="Edit Speed">
+                  <span>🥾</span>
+                  <span>${c.speed}ft</span>
+                </div>
+                <button class="btn-card-close" onclick="removeCombatant('${c.id}')" title="Remove">✕</button>
+              </div>
             </div>
-            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--space-xs);">
-              <h2 style="font-size: var(--font-lg); color: var(--color-gold-light);">${activeCombatant.name}</h2>
-              <span style="font-size: var(--font-xs); color: var(--text-muted);">${activeCombatant.characterClassOrType}</span>
+
+            <!-- HP Row & Quick Chips (-5, -1, +1, +5) -->
+            <div class="turn-hp-row" style="margin-bottom: 4px;">
+              <div class="hp-main-label" onclick="openDamageHealModal('${c.id}')">
+                <span>HP:</span>
+                <span class="hp-current-num ${c.currentHp <= 3 ? "red" : c.currentHp <= 6 ? "low" : ""}">${c.currentHp}</span>
+                <span>/ ${c.maxHp}</span>
+                ${c.tempHp > 0 ? `<span class="temp-hp-pill-tag">🛡️ +${c.tempHp} Temp</span>` : ""}
+              </div>
+
+              <div class="quick-hp-chips-group">
+                <button class="chip-quick-hp dmg" onclick="applyDamage('${c.id}', 5)">-5</button>
+                <button class="chip-quick-hp dmg" onclick="applyDamage('${c.id}', 1)">-1</button>
+                <button class="chip-quick-hp heal" onclick="applyHealing('${c.id}', 1)">+1</button>
+                <button class="chip-quick-hp heal" onclick="applyHealing('${c.id}', 5)">+5</button>
+              </div>
             </div>
-            <p style="font-size: var(--font-xs); color: var(--text-muted); margin-bottom: var(--space-sm);">
-              <strong>AC:</strong> ${activeCombatant.armorClass} &nbsp;|&nbsp;
-              <strong>Speed:</strong> ${activeCombatant.speed}ft &nbsp;|&nbsp;
-              <strong>Init:</strong> ${activeCombatant.initiativeRoll}
-            </p>
-            ${activeCombatant.notes ? `
-              <div style="font-size: var(--font-xs); background: rgba(15, 14, 19, 0.6); padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-sm); border: 1px solid var(--border-dungeon); margin-bottom: var(--space-sm);">
-                <strong>Notes / Abilities:</strong> ${activeCombatant.notes}
+
+            <!-- HP Bar -->
+            <div class="unified-hp-bar" style="margin-bottom: 6px;" onclick="openDamageHealModal('${c.id}')">
+              <div class="unified-hp-fill ${c.currentHp <= 3 ? "red" : c.currentHp <= 6 ? "amber" : ""}" style="width: ${hpPercent}%;"></div>
+              ${c.tempHp > 0 ? `
+                <div class="unified-hp-temp" style="width: ${Math.min(100, (c.tempHp / (c.maxHp || 1)) * 100)}%;"></div>
+              ` : ""}
+            </div>
+
+            <!-- Condition Badges & Chips -->
+            <div class="combatant-chips-row">
+              ${c.coverType && c.coverType !== "NONE" ? `
+                <span class="pill-cover-badge" onclick="openAcModal('${c.id}')">
+                  ${c.coverType === "HALF" ? "Half Cover" : c.coverType === "THREE_QUARTERS" ? "3/4 Cover" : "Total Cover"}
+                </span>
+              ` : ""}
+              ${c.isDifficultTerrain ? `
+                <span class="pill-terrain-badge" onclick="openSpeedModal('${c.id}')">
+                  Difficult Terrain
+                </span>
+              ` : ""}
+              ${(c.conditions || []).filter(cn => cn !== "half_cover" && cn !== "three_quarters_cover" && cn !== "total_cover" && cn !== "difficult_terrain").map(cn => {
+                const condObj = CONDITIONS.find(x => x.id === cn);
+                return condObj ? `<span class="pill-cover-badge" style="border-color:${condObj.color};" onclick="openConditionsModal('${c.id}')">${condObj.name}</span>` : "";
+              }).join("")}
+              <button class="btn-add-condition-chip" onclick="openConditionsModal('${c.id}')">+ Condition</button>
+            </div>
+
+            <!-- Scroll Note Snippet (if available) -->
+            ${c.notes ? `
+              <div class="scroll-note-snippet">
+                <span>📜</span>
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.notes}</span>
               </div>
             ` : ""}
-            <div style="display: flex; gap: var(--space-xs); flex-wrap: wrap;">
-              <button class="btn btn-primary btn-sm" style="flex: 1;" onclick="nextTurn()">Finish Turn &rarr;</button>
-              <button class="btn btn-secondary btn-sm" onclick="openDamageHealModal('${activeCombatant.id}')">&plusmn; HP</button>
-              <button class="btn btn-secondary btn-sm" onclick="openConditionsModal('${activeCombatant.id}')">Conditions</button>
-            </div>
           </div>
-        ` : ""}
-
-        <!-- Live Combat Event Log -->
-        <div class="combat-log-card">
-          <div class="combat-log-header">
-            <span style="font-family: var(--font-display); font-size: var(--font-sm); font-weight: 700; color: var(--color-gold-light);">Combat Log</span>
-            <button class="btn btn-ghost btn-sm" onclick="store.encounter.log = []; store.saveToStorage(); renderApp();">Clear</button>
-          </div>
-          <div class="combat-log-stream">
-            ${enc.log.length === 0 ? `
-              <div style="color: var(--text-subtle); text-align: center; padding: var(--space-md);">No combat actions logged yet.</div>
-            ` : enc.log.map(entry => `
-              <div class="log-entry ${entry.type}">
-                <span style="opacity: 0.6; font-size: 0.7rem;">[R${entry.round} ${entry.time}]</span> ${entry.text}
-              </div>
-            `).join("")}
-          </div>
-        </div>
-      </div>
+        `;
+      }).join("")}
     </div>
   `;
 }
 
-function renderCombatantCard(c, isActive) {
-  const hpPercent = Math.max(0, Math.min(100, (c.currentHp / (c.maxHp || 1)) * 100));
-  const hpColor = getHpBarColor(c.currentHp, c.maxHp);
-  const isDown = c.currentHp <= 0;
-
-  return `
-    <div class="combatant-card ${isActive ? "active-turn" : ""} ${c.isDead ? "is-dead" : ""}" id="card-${c.id}">
-      ${isActive ? `<div class="turn-ribbon">Active Turn</div>` : ""}
-
-      <div class="combatant-header">
-        <div class="combatant-identity">
-          <div class="init-badge" onclick="openInitiativeEditModal('${c.id}')" title="Click to edit initiative">
-            <span class="init-score">${c.initiativeRoll}</span>
-            <span class="init-label">Init</span>
-          </div>
-
-          <div class="combatant-titles">
-            <div class="combatant-name-row">
-              <span class="combatant-name">${c.name}</span>
-              <span class="role-tag ${c.isPlayer ? "player" : "monster"}">${c.isPlayer ? "PC" : "Monster"}</span>
-              ${c.isDead ? `<span class="role-tag" style="background: rgba(100, 116, 139, 0.3); color: #cbd5e1;">Dead</span>` : ""}
-            </div>
-            <span class="combatant-class">${c.characterClassOrType}</span>
-          </div>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 4px;">
-          <button class="btn btn-ghost btn-sm" onclick="removeCombatant('${c.id}')" title="Remove from arena">
-            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Stats Bar: AC, Cover, Speed, Terrain, Passive Perception, Spell DC -->
-      <div class="combatant-stats-bar">
-        <div class="stat-pill pill-ac ${c.coverType !== "NONE" ? "pill-cover" : ""}" onclick="openAcModal('${c.id}')" title="Click to edit AC / Cover">
-          <strong>AC ${c.armorClass}</strong> ${c.coverType !== "NONE" ? `(${c.coverType})` : ""}
-        </div>
-        <div class="stat-pill pill-speed ${c.isDifficultTerrain ? "pill-difficult" : ""}" onclick="openSpeedModal('${c.id}')" title="Click to edit Speed / Difficult Terrain">
-          <strong>${c.speed}ft</strong> ${c.isDifficultTerrain ? "(Diff)" : ""}
-        </div>
-        ${c.passivePerception ? `<div class="stat-pill" title="Passive Perception">Percep: <strong>${c.passivePerception}</strong></div>` : ""}
-        ${c.spellDc ? `<div class="stat-pill" title="Spell Save DC">DC: <strong>${c.spellDc}</strong></div>` : ""}
-      </div>
-
-      <!-- HP Bar Component -->
-      <div class="hp-container">
-        <div class="hp-meta">
-          <div class="hp-text-group">
-            <span class="hp-digits">${c.currentHp} / ${c.maxHp} HP</span>
-            ${c.tempHp > 0 ? `<span class="temp-hp-badge">+${c.tempHp} Temp</span>` : ""}
-          </div>
-          <button class="btn btn-ghost btn-sm" style="padding: 0 4px; height: 22px; font-size: 0.7rem; color: var(--color-gold-light);" onclick="openDamageHealModal('${c.id}')">
-            Manage &plusmn;
-          </button>
-        </div>
-        <div class="hp-bar-outer">
-          <div class="hp-bar-fill" style="width: ${hpPercent}%; background-color: ${hpColor};"></div>
-          ${c.tempHp > 0 ? `<div class="hp-bar-temp" style="width: ${Math.min(100, (c.tempHp / (c.maxHp || 1)) * 100)}%;"></div>` : ""}
-        </div>
-      </div>
-
-      <!-- HP Quick Step Buttons -->
-      <div class="hp-actions-row">
-        <div class="hp-stepper-group">
-          <button class="btn-step dmg" onclick="applyDamage('${c.id}', 1)">-1</button>
-          <button class="btn-step dmg" onclick="applyDamage('${c.id}', 5)">-5</button>
-          <button class="btn-step dmg" onclick="applyDamage('${c.id}', 10)">-10</button>
-        </div>
-        <div class="hp-stepper-group">
-          <button class="btn-step heal" onclick="applyHealing('${c.id}', 1)">+1</button>
-          <button class="btn-step heal" onclick="applyHealing('${c.id}', 5)">+5</button>
-          <button class="btn-step heal" onclick="applyHealing('${c.id}', 10)">+10</button>
-        </div>
-      </div>
-
-      <!-- Death Saves Box (Downed Players) -->
-      ${c.isPlayer && isDown ? `
-        <div class="death-saves-box">
-          <div class="death-save-group">
-            <span class="death-save-label" style="color: var(--color-hp-green);">Succ:</span>
-            <span class="death-dot ${c.deathSavesSuccess >= 1 ? "succ-active" : ""}" onclick="recordDeathSave('${c.id}', true)"></span>
-            <span class="death-dot ${c.deathSavesSuccess >= 2 ? "succ-active" : ""}" onclick="recordDeathSave('${c.id}', true)"></span>
-            <span class="death-dot ${c.deathSavesSuccess >= 3 ? "succ-active" : ""}" onclick="recordDeathSave('${c.id}', true)"></span>
-          </div>
-
-          <div class="death-save-group">
-            <span class="death-save-label" style="color: var(--color-hp-red);">Fail:</span>
-            <span class="death-dot ${c.deathSavesFailure >= 1 ? "fail-active" : ""}" onclick="recordDeathSave('${c.id}', false)"></span>
-            <span class="death-dot ${c.deathSavesFailure >= 2 ? "fail-active" : ""}" onclick="recordDeathSave('${c.id}', false)"></span>
-            <span class="death-dot ${c.deathSavesFailure >= 3 ? "fail-active" : ""}" onclick="recordDeathSave('${c.id}', false)"></span>
-          </div>
-
-          <button class="btn btn-sm btn-outline-gold" style="height: 26px; padding: 0 6px;" onclick="reviveCombatant('${c.id}')">Revive (1 HP)</button>
-        </div>
-      ` : ""}
-
-      <!-- Conditions List -->
-      <div class="conditions-row">
-        ${(c.conditions || []).map(condId => {
-          const cond = CONDITIONS.find(cn => cn.id === condId);
-          if (!cond) return "";
-          return `
-            <span class="condition-chip" style="background-color: ${cond.color};" onclick="toggleCondition('${c.id}', '${cond.id}')" title="${cond.desc}">
-              ${cond.name} <span class="chip-remove">&times;</span>
-            </span>
-          `;
-        }).join("")}
-        <button class="btn btn-ghost btn-sm" style="font-size: 0.68rem; padding: 2px 6px; height: 24px; border: 1px dashed var(--border-dungeon);" onclick="openConditionsModal('${c.id}')">
-          + Condition
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-// --- Screen 2: Party Roster ---
-function renderPartyRoster() {
+// ------------------------------------------
+// PARTY ROSTER SCREEN (Screenshot 4 & 5)
+// ------------------------------------------
+function renderPartyScreen() {
   const party = store.party;
 
   return `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md); flex-wrap: wrap; gap: var(--space-xs);">
-      <div>
-        <h2 style="font-size: var(--font-lg); color: var(--color-gold-light);">Party Roster</h2>
-        <p style="font-size: var(--font-xs); color: var(--text-muted);">Manage persistent player characters saved in your browser storage.</p>
-      </div>
-      <div style="display: flex; gap: var(--space-xs);">
-        <button class="btn btn-secondary btn-sm" onclick="addAllPartyToEncounter()">+ Add All to Arena</button>
-        <button class="btn btn-primary btn-sm" onclick="openCharacterModal()">+ New Character</button>
-      </div>
-    </div>
-
-    <div class="roster-grid">
-      ${party.length === 0 ? `
-        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: var(--space-xl);">
-          <h3 style="color: var(--color-gold-light); margin-bottom: var(--space-xs);">No Party Members</h3>
-          <p style="color: var(--text-muted); font-size: var(--font-sm); margin-bottom: var(--space-md);">Add your adventuring party to track their stats, spells, and initiatives.</p>
-          <button class="btn btn-primary" onclick="openCharacterModal()">+ Create Character</button>
+    <div style="padding: 12px 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div>
+          <h2 style="font-size: 18px; font-weight: 800; color: var(--color-gold);">PARTY ROSTER</h2>
+          <span style="font-size: 12px; color: var(--text-muted);">Persistent heroes saved for repeated encounters (${party.length})</span>
         </div>
-      ` : party.map(pc => `
-        <div class="character-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-              <h3 style="font-size: var(--font-md); color: var(--color-gold-light);">${pc.name}</h3>
-              <div style="font-size: var(--font-xs); color: var(--text-muted);">${pc.characterClass} &bull; Lvl ${pc.level} ${pc.playerName ? `(${pc.playerName})` : ""}</div>
+        <button class="btn-dialog-save" style="padding: 8px 16px; font-size: 13px;" onclick="addAllPartyToEncounter()">
+          Send All ➔
+        </button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        ${party.map(p => `
+          <div class="combatant-list-card" style="margin: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <span style="font-size: 17px; font-weight: 800; color: #fff;">${p.name}</span>
+                <div style="font-size: 12px; color: var(--color-gold);">${p.characterClass} (Lvl ${p.level}) ${p.playerName ? `&bull; ${p.playerName}` : ""}</div>
+              </div>
+              <div style="display: flex; gap: 4px;">
+                <button class="icon-btn-header" onclick="openCharacterModal('${p.id}')" title="Edit">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                </button>
+                <button class="icon-btn-header crimson" onclick="deletePartyMember('${p.id}')" title="Delete">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                </button>
+              </div>
             </div>
-            <div style="display: flex; gap: 2px;">
-              <button class="btn btn-ghost btn-sm" onclick="openCharacterModal('${pc.id}')" title="Edit Character">
-                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-              </button>
-              <button class="btn btn-ghost btn-sm" onclick="deleteCharacter('${pc.id}')" title="Delete Character">
-                <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-              </button>
+
+            <!-- Stats Bar -->
+            <div style="display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap;">
+              <span class="stat-squircle" style="width: auto; height: 32px; padding: 0 10px; flex-direction: row; gap: 4px;">
+                <span class="stat-squircle-label">HP</span>
+                <strong style="color:#fff; font-size:13px;">${p.maxHp}</strong>
+              </span>
+              <span class="stat-squircle" style="width: auto; height: 32px; padding: 0 10px; flex-direction: row; gap: 4px;">
+                <span class="stat-squircle-label">AC</span>
+                <strong style="color:#fff; font-size:13px;">${p.armorClass}</strong>
+              </span>
+              <span class="stat-squircle" style="width: auto; height: 32px; padding: 0 10px; flex-direction: row; gap: 4px;">
+                <span class="stat-squircle-label">INIT</span>
+                <strong style="color:#fff; font-size:13px;">+${p.initiativeModifier}</strong>
+              </span>
+              <span class="stat-squircle" style="width: auto; height: 32px; padding: 0 10px; flex-direction: row; gap: 4px;">
+                <span class="stat-squircle-label">SPD</span>
+                <strong style="color:#fff; font-size:13px;">${p.speed}ft</strong>
+              </span>
             </div>
+
+            ${p.notes ? `
+              <div class="scroll-note-snippet" style="margin-bottom: 8px;">
+                <span>📜</span> <span>${p.notes}</span>
+              </div>
+            ` : ""}
+
+            <button class="btn-prev-turn" style="height: 38px; width: 100%; border-radius: 8px;" onclick="addSinglePlayerToArena('${p.id}')">
+              + Add to Active Combat
+            </button>
           </div>
+        `).join("")}
+      </div>
 
-          <div class="combatant-stats-bar" style="margin: var(--space-xs) 0;">
-            <div class="stat-pill">HP: <strong>${pc.maxHp}</strong></div>
-            <div class="stat-pill pill-ac">AC: <strong>${pc.armorClass}</strong></div>
-            <div class="stat-pill">Init Mod: <strong>${pc.initiativeModifier >= 0 ? "+" + pc.initiativeModifier : pc.initiativeModifier}</strong></div>
-            <div class="stat-pill">Speed: <strong>${pc.speed}ft</strong></div>
-            ${pc.passivePerception ? `<div class="stat-pill">Percep: <strong>${pc.passivePerception}</strong></div>` : ""}
-            ${pc.spellDc ? `<div class="stat-pill">DC: <strong>${pc.spellDc}</strong></div>` : ""}
-          </div>
-
-          ${pc.notes ? `
-            <div style="font-size: var(--font-xs); color: var(--text-muted); background: rgba(15, 14, 19, 0.5); padding: var(--space-xs); border-radius: var(--radius-sm); border: 1px solid var(--border-dungeon); margin-top: auto;">
-              ${pc.notes}
-            </div>
-          ` : ""}
-
-          <button class="btn btn-outline-gold btn-sm" style="margin-top: var(--space-xs); width: 100%;" onclick="addPlayerToEncounter(store.party.find(p => p.id === '${pc.id}'))">
-            + Add to Active Combat
-          </button>
-        </div>
-      `).join("")}
+      <button class="btn-next-turn" style="width: 100%; margin-top: 14px;" onclick="openCharacterModal(null)">
+        + Add New Player Character
+      </button>
     </div>
   `;
 }
 
-// --- Screen 3: Bestiary (5e SRD Presets) ---
-function renderBestiary() {
-  const categories = ["All", "Humanoid", "Undead", "Beast", "Giant", "Dragon", "Aberration"];
-  const query = store.bestiarySearch.toLowerCase().trim();
-
-  const filtered = MONSTER_PRESETS.filter(m => {
-    const matchCat = store.bestiaryCategory === "All" || m.type.toLowerCase() === store.bestiaryCategory.toLowerCase();
-    const matchSearch = !query || m.name.toLowerCase().includes(query) || m.cr.toLowerCase().includes(query) || m.type.toLowerCase().includes(query);
-    return matchCat && matchSearch;
-  });
-
+// ------------------------------------------
+// BESTIARY SCREEN
+// ------------------------------------------
+function renderBestiaryScreen() {
   return `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md); flex-wrap: wrap; gap: var(--space-xs);">
-      <div>
-        <h2 style="font-size: var(--font-lg); color: var(--color-gold-light);">Bestiary & SRD Monsters</h2>
-        <p style="font-size: var(--font-xs); color: var(--text-muted);">Quickly spawn SRD 5e monsters with authentic stats, attacks, and traits.</p>
+    <div style="padding: 12px 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h2 style="font-size: 18px; font-weight: 800; color: var(--color-gold);">BESTIARY (SRD)</h2>
+        <button class="btn-dialog-save" style="padding: 6px 14px; font-size: 12px;" onclick="openAddEnemyModal()">
+          + Custom Monster
+        </button>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="openAddEnemyModal()">+ Custom Monster</button>
-    </div>
 
-    <!-- Search & Category Filters -->
-    <div style="display: flex; flex-direction: column; gap: var(--space-xs); margin-bottom: var(--space-md);">
-      <input type="text" class="form-input" placeholder="Search monsters by name or CR (e.g. Goblin, Dragon, CR 1)..." value="${store.bestiarySearch}" oninput="store.bestiarySearch = this.value; renderApp();">
-      
-      <div class="filter-chip-row">
-        ${categories.map(cat => `
-          <button class="filter-chip ${store.bestiaryCategory === cat ? "active" : ""}" onclick="store.bestiaryCategory = '${cat}'; renderApp();">
-            ${cat}
-          </button>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        ${MONSTER_PRESETS.map(m => `
+          <div class="combatant-list-card" style="margin: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="font-size: 16px; font-weight: 800; color: #fff;">${m.name}</span>
+                <div style="font-size: 12px; color: var(--text-muted);">${m.cr} &bull; ${m.type}</div>
+              </div>
+              <button class="btn-prev-turn" style="height: 34px; padding: 0 12px; border-radius: 8px;" onclick="spawnMonster('${m.name}')">
+                + Spawn
+              </button>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <span class="pill-shield-ac">AC ${m.ac}</span>
+              <span class="pill-boot-speed">${m.maxHp} HP</span>
+              <span class="pill-shield-ac" style="color:#fcd34d;">Init +${m.initMod}</span>
+              <span class="pill-boot-speed">${m.speed}ft</span>
+            </div>
+            ${m.notes ? `<div class="scroll-note-snippet" style="margin-top:6px;"><span>⚔️</span> <span>${m.notes}</span></div>` : ""}
+          </div>
         `).join("")}
       </div>
     </div>
-
-    <div class="bestiary-grid">
-      ${filtered.length === 0 ? `
-        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: var(--space-xl);">
-          <p style="color: var(--text-muted);">No monsters matched your filter.</p>
-        </div>
-      ` : filtered.map(m => `
-        <div class="card" style="display: flex; flex-direction: column; gap: var(--space-xs);">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-              <h3 style="font-size: var(--font-md); color: var(--color-gold-light);">${m.name}</h3>
-              <div style="font-size: var(--font-xs); color: var(--text-muted);">${m.cr} &bull; ${m.type}</div>
-            </div>
-            <span class="role-tag monster">Monster</span>
-          </div>
-
-          <div class="combatant-stats-bar">
-            <div class="stat-pill">HP: <strong>${m.maxHp}</strong></div>
-            <div class="stat-pill pill-ac">AC: <strong>${m.ac}</strong></div>
-            <div class="stat-pill">Init Mod: <strong>${m.initMod >= 0 ? "+" + m.initMod : m.initMod}</strong></div>
-            <div class="stat-pill">Speed: <strong>${m.speed}ft</strong></div>
-            ${m.spellDc ? `<div class="stat-pill">DC: <strong>${m.spellDc}</strong></div>` : ""}
-          </div>
-
-          ${m.notes ? `
-            <div style="font-size: var(--font-xs); color: var(--text-muted); background: rgba(15, 14, 19, 0.5); padding: var(--space-xs); border-radius: var(--radius-sm); border: 1px solid var(--border-dungeon); margin-top: auto;">
-              ${m.notes}
-            </div>
-          ` : ""}
-
-          <div style="display: flex; align-items: center; gap: var(--space-xs); margin-top: var(--space-xs);">
-            <div style="display: flex; align-items: center; background: var(--bg-dungeon-card-elevated); border: 1px solid var(--border-dungeon); border-radius: var(--radius-sm); height: 36px;">
-              <button class="btn btn-ghost btn-sm" style="width: 28px; height: 36px; padding: 0;" onclick="adjustPresetCount('${m.name}', -1)">-</button>
-              <span id="preset-count-${m.name}" style="font-weight: 700; font-size: var(--font-xs); min-width: 20px; text-align: center;">1</span>
-              <button class="btn btn-ghost btn-sm" style="width: 28px; height: 36px; padding: 0;" onclick="adjustPresetCount('${m.name}', 1)">+</button>
-            </div>
-            <button class="btn btn-secondary btn-sm" style="flex: 1;" onclick="spawnPresetMonster('${m.name}')">
-              + Spawn into Combat
-            </button>
-          </div>
-        </div>
-      `).join("")}
-    </div>
   `;
 }
 
-const presetCounts = {};
-function adjustPresetCount(name, delta) {
-  presetCounts[name] = Math.max(1, (presetCounts[name] || 1) + delta);
-  const el = document.getElementById(`preset-count-${name}`);
-  if (el) el.textContent = presetCounts[name];
-}
-
-function spawnPresetMonster(name) {
-  const preset = MONSTER_PRESETS.find(m => m.name === name);
-  if (!preset) return;
-  const count = presetCounts[name] || 1;
-  addEnemyToEncounter(preset.name, preset.maxHp, preset.ac, preset.initMod, count, true, preset.cr, preset.notes, preset.speed, preset.spellDc);
-}
-
-// --- Screen 4: Dice Roller & Rules Reference ---
-function renderDiceAndRules() {
+// ------------------------------------------
+// DICE & RULES SCREEN
+// ------------------------------------------
+function renderDiceScreen() {
   const last = store.lastRoll;
 
   return `
-    <div class="dice-roller-panel">
-      <!-- Left Column: Interactive Dice Roller -->
-      <div>
-        <div style="margin-bottom: var(--space-md);">
-          <h2 style="font-size: var(--font-lg); color: var(--color-gold-light);">Dice Roller</h2>
-          <p style="font-size: var(--font-xs); color: var(--text-muted);">Roll 5e polyhedral dice with Advantage, Disadvantage, and modifiers.</p>
+    <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 12px;">
+      <h2 style="font-size: 18px; font-weight: 800; color: var(--color-gold);">DICE & 5E RULES</h2>
+
+      <!-- Dice Roller -->
+      <div class="dialog-inner-card">
+        <span class="dialog-inner-title">Polyhedral Dice</span>
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 8px 0;">
+          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px;" onclick="rollDieDirect(4)">d4</button>
+          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px;" onclick="rollDieDirect(6)">d6</button>
+          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px;" onclick="rollDieDirect(8)">d8</button>
+          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px;" onclick="rollDieDirect(10)">d10</button>
+          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px;" onclick="rollDieDirect(12)">d12</button>
+          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px; border-color: var(--color-gold); color: var(--color-gold-light);" onclick="rollDieDirect(20)">d20</button>
+          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 13px;" onclick="rollDieDirect(100)">%</button>
         </div>
 
-        <!-- Dice Control Options (Quantity & Modifier) -->
-        <div class="card" style="margin-bottom: var(--space-md); padding: var(--space-sm) var(--space-md);">
-          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-sm);">
-            <!-- Dice Count -->
-            <div style="display: flex; align-items: center; gap: var(--space-xs);">
-              <span class="form-label" style="margin: 0;">Count:</span>
-              <button class="btn-step" onclick="store.diceCount = Math.max(1, store.diceCount - 1); renderApp();">-</button>
-              <strong style="min-width: 24px; text-align: center;">${store.diceCount}</strong>
-              <button class="btn-step" onclick="store.diceCount = Math.min(20, store.diceCount + 1); renderApp();">+</button>
-            </div>
-
-            <!-- Modifier -->
-            <div style="display: flex; align-items: center; gap: var(--space-xs);">
-              <span class="form-label" style="margin: 0;">Mod:</span>
-              <button class="btn-step" onclick="store.diceModifier--; renderApp();">-</button>
-              <strong style="min-width: 32px; text-align: center;">${store.diceModifier >= 0 ? "+" + store.diceModifier : store.diceModifier}</strong>
-              <button class="btn-step" onclick="store.diceModifier++; renderApp();">+</button>
-            </div>
-
-            <!-- D20 Mode -->
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <button class="btn btn-sm ${store.d20RollMode === "NORMAL" ? "btn-primary" : "btn-secondary"}" onclick="store.d20RollMode = 'NORMAL'; renderApp();">Normal</button>
-              <button class="btn btn-sm ${store.d20RollMode === "ADVANTAGE" ? "btn-primary" : "btn-secondary"}" onclick="store.d20RollMode = 'ADVANTAGE'; renderApp();">Adv</button>
-              <button class="btn btn-sm ${store.d20RollMode === "DISADVANTAGE" ? "btn-primary" : "btn-secondary"}" onclick="store.d20RollMode = 'DISADVANTAGE'; renderApp();">Dis</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dice Buttons Grid -->
-        <div class="dice-grid" style="margin-bottom: var(--space-md);">
-          <button class="dice-btn" onclick="rollDice(4, store.diceCount, store.diceModifier, store.d20RollMode)">
-            <svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm0 4.5l6.5 12h-13L12 6.5z"/></svg>
-            <span class="dice-name">d4</span>
-          </button>
-          <button class="dice-btn" onclick="rollDice(6, store.diceCount, store.diceModifier, store.d20RollMode)">
-            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7 7h2v2H7V7zm10 10h-2v-2h2v2zm0-10h-2v2h2V7zM7 17h2v-2H7v2zm5-5h2v2h-2v-2z"/></svg>
-            <span class="dice-name">d6</span>
-          </button>
-          <button class="dice-btn" onclick="rollDice(8, store.diceCount, store.diceModifier, store.d20RollMode)">
-            <svg viewBox="0 0 24 24"><path d="M12 2l8 10-8 10-8-10 8-10zm0 3.2L6.5 12 12 18.8 17.5 12 12 5.2z"/></svg>
-            <span class="dice-name">d8</span>
-          </button>
-          <button class="dice-btn" onclick="rollDice(10, store.diceCount, store.diceModifier, store.d20RollMode)">
-            <svg viewBox="0 0 24 24"><path d="M12 2l7 6-4 14H9L5 8l7-6z"/></svg>
-            <span class="dice-name">d10</span>
-          </button>
-          <button class="dice-btn" onclick="rollDice(12, store.diceCount, store.diceModifier, store.d20RollMode)">
-            <svg viewBox="0 0 24 24"><path d="M12 2l6 4v8l-6 8-6-8V6l6-4z"/></svg>
-            <span class="dice-name">d12</span>
-          </button>
-          <button class="dice-btn" style="border-color: var(--color-gold);" onclick="rollDice(20, store.diceCount, store.diceModifier, store.d20RollMode)">
-            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l4 12 6 3 6-3 4-12L12 2zm0 2.8l3.6 4.2H8.4L12 4.8zm-5 5.2h10l-5 6.5-5-6.5z"/></svg>
-            <span class="dice-name" style="color: var(--color-gold-light);">d20</span>
-          </button>
-          <button class="dice-btn" onclick="rollDice(100, store.diceCount, store.diceModifier, store.d20RollMode)">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>
-            <span class="dice-name">d100</span>
-          </button>
-        </div>
-
-        <!-- Big Visual Result Showcase -->
-        <div class="dice-result-showcase">
-          ${last ? `
-            <div class="dice-result-total ${last.isNat20 ? "nat20" : last.isNat1 ? "nat1" : ""}">
+        ${last ? `
+          <div class="effective-highlight-banner" style="justify-content: center; flex-direction: column; padding: 14px;">
+            <span style="font-size: 32px; font-weight: 900; color: ${last.isNat20 ? "#34d399" : last.isNat1 ? "#ef4444" : "var(--color-gold-light)"};">
               ${last.total}
-            </div>
-            <div style="font-family: var(--font-display); font-size: var(--font-md); font-weight: 700; color: var(--color-gold-light); margin-top: var(--space-xs);">
-              ${last.isNat20 ? "🌟 NATURAL 20! CRITICAL HIT! 🌟" : last.isNat1 ? "💀 NATURAL 1! CRITICAL FUMBLE! 💀" : last.dice + (last.modifier ? (last.modifier > 0 ? " +" + last.modifier : " " + last.modifier) : "")}
-            </div>
-            <div class="dice-result-formula">
-              Rolls: [${last.rolls.join(", ")}] ${last.discarded !== null ? `(discarded: ${last.discarded})` : ""} ${last.modifier ? `+ (${last.modifier})` : ""}
-            </div>
-          ` : `
-            <div style="color: var(--text-muted); font-size: var(--font-sm);">
-              Click any die above to roll!
-            </div>
-          `}
-        </div>
-
-        <!-- Dice Roll History -->
-        <div class="card" style="margin-top: var(--space-md); max-height: 240px; overflow-y: auto;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-xs);">
-            <span class="form-label" style="margin: 0;">Recent Rolls</span>
-            <button class="btn btn-ghost btn-sm" onclick="store.diceHistory = []; store.lastRoll = null; store.saveToStorage(); renderApp();">Clear</button>
+            </span>
+            <span style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+              ${last.dice} Roll ${last.isNat20 ? "🌟 NATURAL 20!" : last.isNat1 ? "💀 NATURAL 1 FUMBLE" : ""}
+            </span>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 4px; font-size: var(--font-xs);">
-            ${store.diceHistory.length === 0 ? `
-              <span style="color: var(--text-subtle);">No roll history yet.</span>
-            ` : store.diceHistory.map(r => `
-              <div style="display: flex; justify-content: space-between; padding: 4px 8px; background: rgba(15, 14, 19, 0.4); border-radius: var(--radius-sm); border-left: 2px solid ${r.isNat20 ? "#34d399" : r.isNat1 ? "#ef4444" : "var(--color-gold)"};">
-                <span><strong>${r.dice}</strong> [${r.rolls.join(",")}] ${r.modifier ? (r.modifier > 0 ? "+" + r.modifier : r.modifier) : ""}</span>
-                <strong style="color: ${r.isNat20 ? "#34d399" : r.isNat1 ? "#ef4444" : "var(--color-gold-light)"}; font-size: 0.95rem;">${r.total}</strong>
-              </div>
-            `).join("")}
-          </div>
-        </div>
+        ` : ""}
       </div>
 
-      <!-- Right Column: 5e Rules & Conditions Quick Reference -->
-      <div>
-        <div style="margin-bottom: var(--space-md);">
-          <h2 style="font-size: var(--font-lg); color: var(--color-gold-light);">5e Rules Reference</h2>
-          <p style="font-size: var(--font-xs); color: var(--text-muted);">Quick mechanical lookups for conditions, cover, and actions in combat.</p>
-        </div>
-
-        <div class="card" style="display: flex; flex-direction: column; gap: var(--space-sm);">
-          <h3 style="font-size: var(--font-md); color: var(--color-gold-light); border-bottom: 1px solid var(--border-dungeon); padding-bottom: 4px;">
-            Conditions Reference
-          </h3>
-          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto; padding-right: 4px;">
-            ${CONDITIONS.map(cond => `
-              <div style="padding: 6px 10px; background: rgba(15, 14, 19, 0.5); border-radius: var(--radius-sm); border-left: 3px solid ${cond.color};">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
-                  <strong style="color: ${cond.color}; font-size: var(--font-xs);">${cond.name}</strong>
-                </div>
-                <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.35;">${cond.desc}</p>
-              </div>
-            `).join("")}
-          </div>
+      <!-- Conditions Reference -->
+      <div class="dialog-inner-card">
+        <span class="dialog-inner-title">5e Conditions Guide</span>
+        <div style="display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; margin-top: 6px;">
+          ${CONDITIONS.map(cond => `
+            <div style="background: var(--bg-card-darker); border-left: 3px solid ${cond.color}; border-radius: 6px; padding: 6px 10px;">
+              <strong style="color: ${cond.color}; font-size: 12px;">${cond.name}</strong>
+              <p style="font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px;">${cond.desc}</p>
+            </div>
+          `).join("")}
         </div>
       </div>
     </div>
   `;
 }
 
+function rollDieDirect(sides) {
+  const result = rollDie(sides);
+  store.lastRoll = {
+    dice: `1d${sides}`,
+    total: result,
+    isNat20: sides === 20 && result === 20,
+    isNat1: sides === 20 && result === 1
+  };
+  renderApp();
+}
+
+function spawnMonster(name) {
+  const p = MONSTER_PRESETS.find(x => x.name === name);
+  if (!p) return;
+  const count = store.encounter.combatants.filter(c => c.name.startsWith(p.name)).length + 1;
+  const cName = `${p.name} #${count}`;
+  const init = rollD20() + p.initMod;
+
+  store.encounter.combatants.push({
+    id: "c-" + Date.now(),
+    name: cName,
+    isPlayer: false,
+    characterClassOrType: `Enemy (${p.cr})`,
+    maxHp: p.maxHp,
+    currentHp: p.maxHp,
+    tempHp: 0,
+    armorClass: p.ac,
+    baseArmorClass: p.ac,
+    coverType: "NONE",
+    initiativeModifier: p.initMod,
+    initiativeRoll: init,
+    speed: p.speed,
+    baseSpeed: p.speed,
+    isDifficultTerrain: false,
+    spellDc: p.spellDc,
+    notes: p.notes,
+    abilities: [],
+    conditions: [],
+    deathSavesSuccess: 0,
+    deathSavesFailure: 0,
+    isStabilized: false,
+    isDead: false
+  });
+
+  store.encounter.combatants = sortCombatants(store.encounter.combatants);
+  store.logEvent(`Added ${cName} to encounter`, "info");
+  store.save();
+  showToast(`Added ${cName}`);
+  store.currentTab = "combat";
+  renderApp();
+}
+
+function addAllPartyToEncounter() {
+  store.party.forEach(p => {
+    if (!store.encounter.combatants.some(c => c.characterId === p.id)) {
+      store.encounter.combatants.push({
+        id: "c-" + p.id + "-" + Date.now(),
+        characterId: p.id,
+        name: p.name,
+        isPlayer: true,
+        characterClassOrType: `${p.characterClass} (Lvl ${p.level})`,
+        maxHp: p.maxHp,
+        currentHp: p.currentHp,
+        tempHp: p.tempHp || 0,
+        armorClass: p.armorClass,
+        baseArmorClass: p.armorClass,
+        coverType: "NONE",
+        initiativeModifier: p.initiativeModifier,
+        initiativeRoll: rollD20() + p.initiativeModifier,
+        speed: p.speed,
+        baseSpeed: p.speed,
+        isDifficultTerrain: false,
+        spellDc: p.spellDc,
+        notes: p.notes,
+        abilities: p.abilities || [],
+        conditions: [],
+        deathSavesSuccess: 0,
+        deathSavesFailure: 0,
+        isStabilized: false,
+        isDead: false
+      });
+    }
+  });
+
+  store.encounter.combatants = sortCombatants(store.encounter.combatants);
+  store.save();
+  showToast("Party sent to Combat Arena!");
+  store.currentTab = "combat";
+  renderApp();
+}
+
+function addSinglePlayerToArena(partyId) {
+  const p = store.party.find(x => x.id === partyId);
+  if (!p) return;
+  if (!store.encounter.combatants.some(c => c.characterId === p.id)) {
+    store.encounter.combatants.push({
+      id: "c-" + p.id + "-" + Date.now(),
+      characterId: p.id,
+      name: p.name,
+      isPlayer: true,
+      characterClassOrType: `${p.characterClass} (Lvl ${p.level})`,
+      maxHp: p.maxHp,
+      currentHp: p.currentHp,
+      tempHp: p.tempHp || 0,
+      armorClass: p.armorClass,
+      baseArmorClass: p.armorClass,
+      coverType: "NONE",
+      initiativeModifier: p.initiativeModifier,
+      initiativeRoll: rollD20() + p.initiativeModifier,
+      speed: p.speed,
+      baseSpeed: p.speed,
+      isDifficultTerrain: false,
+      spellDc: p.spellDc,
+      notes: p.notes,
+      abilities: p.abilities || [],
+      conditions: [],
+      deathSavesSuccess: 0,
+      deathSavesFailure: 0,
+      isStabilized: false,
+      isDead: false
+    });
+    store.encounter.combatants = sortCombatants(store.encounter.combatants);
+    store.save();
+    showToast(`Added ${p.name} to Combat`);
+  } else {
+    showToast(`${p.name} is already in the arena`);
+  }
+  store.currentTab = "combat";
+  renderApp();
+}
+
+function deletePartyMember(partyId) {
+  if (!confirm("Delete this character from party?")) return;
+  store.party = store.party.filter(p => p.id !== partyId);
+  store.save();
+  renderApp();
+}
+
 // ==========================================
-// MODAL CONTROLS & EVENT HANDLERS
+// MODAL DIALOGS ENGINE (Matching Screenshots 2-5)
 // ==========================================
 
 function openModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.classList.add("open");
+  const el = document.getElementById(id);
+  if (el) el.classList.add("open");
 }
 
 function closeModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.classList.remove("open");
+  const el = document.getElementById(id);
+  if (el) el.classList.remove("open");
 }
 
-// Damage / Heal Modal
-function openDamageHealModal(combatantId) {
-  const c = store.encounter.combatants.find(comb => comb.id === combatantId);
-  if (!c) return;
-  store.activeCombatantId = combatantId;
-
-  document.getElementById("modal-dmg-name").textContent = c.name;
-  document.getElementById("modal-dmg-hp-display").textContent = `${c.currentHp} / ${c.maxHp} HP (Temp: ${c.tempHp || 0})`;
-  document.getElementById("modal-dmg-input").value = "";
-  openModal("modal-damage-heal");
-}
-
-function submitDamage(isHeal) {
-  const amount = parseInt(document.getElementById("modal-dmg-input").value, 10);
-  if (isNaN(amount) || amount <= 0) {
-    showToast("Enter a positive number");
-    return;
-  }
-  if (isHeal) {
-    applyHealing(store.activeCombatantId, amount);
-  } else {
-    applyDamage(store.activeCombatantId, amount);
-  }
-  closeModal("modal-damage-heal");
-}
-
-function submitTempHp() {
-  const amount = parseInt(document.getElementById("modal-dmg-input").value, 10);
-  if (isNaN(amount) || amount < 0) {
-    showToast("Enter a valid number");
-    return;
-  }
-  setTempHp(store.activeCombatantId, amount);
-  closeModal("modal-damage-heal");
-}
-
-function submitSetDirectHp() {
-  const amount = parseInt(document.getElementById("modal-dmg-input").value, 10);
-  if (isNaN(amount) || amount < 0) {
-    showToast("Enter a valid HP number");
-    return;
-  }
-  setHpDirect(store.activeCombatantId, amount);
-  closeModal("modal-damage-heal");
-}
-
-// AC & Cover Modal
-function openAcModal(combatantId) {
-  const c = store.encounter.combatants.find(comb => comb.id === combatantId);
-  if (!c) return;
-  store.activeCombatantId = combatantId;
-
-  document.getElementById("modal-ac-name").textContent = c.name;
-  document.getElementById("modal-ac-input").value = c.baseArmorClass || c.armorClass;
-  document.getElementById("modal-ac-cover-select").value = c.coverType || "NONE";
-  openModal("modal-ac");
-}
-
-function submitAcUpdate() {
-  const baseAc = parseInt(document.getElementById("modal-ac-input").value, 10);
-  const cover = document.getElementById("modal-ac-cover-select").value;
-  if (isNaN(baseAc) || baseAc < 1) {
-    showToast("Enter a valid AC");
-    return;
-  }
-  updateArmorClass(store.activeCombatantId, baseAc, cover);
-  closeModal("modal-ac");
-}
-
-// Speed & Difficult Terrain Modal
+// ------------------------------------------
+// 1. EDIT MOVEMENT SPEED DIALOG (Screenshot 2)
+// ------------------------------------------
 function openSpeedModal(combatantId) {
-  const c = store.encounter.combatants.find(comb => comb.id === combatantId);
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
   if (!c) return;
   store.activeCombatantId = combatantId;
+  store.dialogSpeedBase = c.baseSpeed || c.speed || 30;
+  store.dialogSpeedDiff = !!c.isDifficultTerrain;
 
-  document.getElementById("modal-speed-name").textContent = c.name;
-  document.getElementById("modal-speed-input").value = c.baseSpeed || c.speed;
-  document.getElementById("modal-speed-diff-checkbox").checked = !!c.isDifficultTerrain;
-  openModal("modal-speed");
+  document.getElementById("modal-speed-combatant-name").textContent = c.name;
+  updateSpeedDialogUi();
+  openModal("modal-speed-dialog");
 }
 
-function submitSpeedUpdate() {
-  const baseSpeed = parseInt(document.getElementById("modal-speed-input").value, 10);
-  const isDiff = document.getElementById("modal-speed-diff-checkbox").checked;
-  if (isNaN(baseSpeed) || baseSpeed < 0) {
-    showToast("Enter a valid speed");
-    return;
+function updateSpeedDialogUi() {
+  const base = store.dialogSpeedBase;
+  const isDiff = store.dialogSpeedDiff;
+  const effective = isDiff ? Math.floor(base / 2) : base;
+
+  document.getElementById("modal-speed-subtitle").textContent = `${document.getElementById("modal-speed-combatant-name").textContent} • Effective Speed: ${effective}ft`;
+  document.getElementById("modal-speed-value").value = base;
+
+  // Toggle switch
+  const toggle = document.getElementById("speed-diff-toggle");
+  if (toggle) {
+    toggle.classList.toggle("on", isDiff);
   }
-  updateSpeed(store.activeCombatantId, baseSpeed, isDiff);
-  closeModal("modal-speed");
+
+  // Summary box
+  document.getElementById("modal-speed-summary").textContent = isDiff ? `${effective}ft (½ of ${base}ft)` : `${effective}ft`;
+
+  // Presets
+  document.querySelectorAll(".chip-speed-preset").forEach(btn => {
+    const val = parseInt(btn.dataset.speed, 10);
+    btn.classList.toggle("selected", val === base);
+  });
 }
 
-// Conditions Modal
-function openConditionsModal(combatantId) {
-  const c = store.encounter.combatants.find(comb => comb.id === combatantId);
+function adjustSpeedStepper(delta) {
+  store.dialogSpeedBase = Math.max(0, store.dialogSpeedBase + delta);
+  updateSpeedDialogUi();
+}
+
+function setSpeedPreset(val) {
+  store.dialogSpeedBase = val;
+  updateSpeedDialogUi();
+}
+
+function toggleSpeedDifficult() {
+  store.dialogSpeedDiff = !store.dialogSpeedDiff;
+  updateSpeedDialogUi();
+}
+
+function saveSpeedDialog() {
+  const c = store.encounter.combatants.find(x => x.id === store.activeCombatantId);
+  if (c) {
+    const base = store.dialogSpeedBase;
+    const isDiff = store.dialogSpeedDiff;
+    const effective = isDiff ? Math.floor(base / 2) : base;
+
+    let conditions = (c.conditions || []).filter(cn => cn !== "difficult_terrain");
+    if (isDiff) conditions.push("difficult_terrain");
+
+    c.baseSpeed = base;
+    c.speed = effective;
+    c.isDifficultTerrain = isDiff;
+    c.conditions = conditions;
+
+    store.logEvent(`Updated ${c.name} Speed to ${effective}ft ${isDiff ? "(Difficult Terrain)" : ""}`, "info");
+    store.save();
+  }
+  closeModal("modal-speed-dialog");
+  renderApp();
+}
+
+// ------------------------------------------
+// 2. EDIT ARMOR CLASS (AC) DIALOG (Screenshot 3)
+// ------------------------------------------
+function openAcModal(combatantId) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
   if (!c) return;
   store.activeCombatantId = combatantId;
+  store.dialogAcBase = c.baseArmorClass || c.armorClass || 10;
+  store.dialogAcCover = c.coverType || "NONE";
 
-  document.getElementById("modal-conditions-name").textContent = c.name;
-  const container = document.getElementById("modal-conditions-grid");
-  container.innerHTML = CONDITIONS.map(cond => {
-    const isChecked = (c.conditions || []).includes(cond.id);
-    return `
-      <label style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--bg-dungeon-card-elevated); border: 1px solid ${isChecked ? cond.color : "var(--border-dungeon)"}; border-radius: var(--radius-sm); cursor: pointer;">
-        <input type="checkbox" ${isChecked ? "checked" : ""} onchange="toggleCondition('${combatantId}', '${cond.id}')">
-        <span style="font-size: var(--font-xs); font-weight: 600; color: ${isChecked ? cond.color : "var(--text-white)"};">${cond.name}</span>
-      </label>
-    `;
-  }).join("");
-
-  openModal("modal-conditions");
+  document.getElementById("modal-ac-combatant-name").textContent = c.name;
+  updateAcDialogUi();
+  openModal("modal-ac-dialog");
 }
 
-// Initiative Edit Modal
-function openInitiativeEditModal(combatantId) {
-  const c = store.encounter.combatants.find(comb => comb.id === combatantId);
-  if (!c) return;
-  store.activeCombatantId = combatantId;
+function updateAcDialogUi() {
+  const base = store.dialogAcBase;
+  const cover = store.dialogAcCover;
+  const bonus = cover === "HALF" ? 2 : cover === "THREE_QUARTERS" ? 5 : cover === "TOTAL" ? 10 : 0;
+  const effective = base + bonus;
 
-  document.getElementById("modal-init-name").textContent = c.name;
-  document.getElementById("modal-init-input").value = c.initiativeRoll;
-  openModal("modal-initiative");
-}
+  document.getElementById("modal-ac-subtitle").textContent = `${document.getElementById("modal-ac-combatant-name").textContent} • Total AC: ${effective}`;
+  document.getElementById("modal-ac-value").value = base;
 
-function submitInitiative() {
-  const val = parseInt(document.getElementById("modal-init-input").value, 10);
-  if (isNaN(val)) {
-    showToast("Enter a valid score");
-    return;
-  }
-  setInitiative(store.activeCombatantId, val);
-  closeModal("modal-initiative");
-}
+  // Cover buttons
+  document.querySelectorAll(".cover-option-btn").forEach(btn => {
+    btn.classList.toggle("selected", btn.dataset.cover === cover);
+  });
 
-function rollSingleCombatantInitiative() {
-  const c = store.encounter.combatants.find(comb => comb.id === store.activeCombatantId);
-  if (!c) return;
-  const roll = rollD20() + c.initiativeModifier;
-  setInitiative(store.activeCombatantId, roll);
-  closeModal("modal-initiative");
-}
-
-// Party Initiative Batch Modal
-function openPartyInitiativeModal() {
-  const partyInCombat = store.encounter.combatants.filter(c => c.isPlayer);
-  if (partyInCombat.length === 0) {
-    showToast("No party members in the combat arena!");
-    return;
+  // Cover desc
+  const descEl = document.getElementById("modal-ac-cover-desc");
+  if (descEl) {
+    const descs = {
+      NONE: "Standard line of sight. No cover bonuses.",
+      HALF: "Half Cover: Obstacle blocks at least half its body. +2 AC and +2 Dex saves.",
+      THREE_QUARTERS: "3/4 Cover: Obstacle blocks 3/4 of its body. +5 AC and +5 Dex saves.",
+      TOTAL: "Total Cover: Completely concealed by an obstacle. Attacks/spells cannot target directly (+10 AC applied)."
+    };
+    descEl.textContent = descs[cover] || descs.NONE;
   }
 
-  const container = document.getElementById("modal-party-init-list");
-  container.innerHTML = partyInCombat.map(c => `
-    <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); padding: var(--space-xs) 0; border-bottom: 1px solid var(--border-dungeon);">
-      <div>
-        <strong style="color: var(--text-white); font-size: var(--font-sm);">${c.name}</strong>
-        <div style="font-size: var(--font-xs); color: var(--text-muted);">Mod: ${c.initiativeModifier >= 0 ? "+" + c.initiativeModifier : c.initiativeModifier}</div>
+  // Summary box
+  const sumEl = document.getElementById("modal-ac-summary");
+  if (sumEl) {
+    sumEl.innerHTML = `${effective} AC <span style="font-size:11px; font-weight:normal; color:var(--text-muted);">(${base} base + ${bonus} cover)</span>`;
+  }
+}
+
+function adjustAcStepper(delta) {
+  store.dialogAcBase = Math.max(1, store.dialogAcBase + delta);
+  updateAcDialogUi();
+}
+
+function setCoverType(type) {
+  store.dialogAcCover = type;
+  updateAcDialogUi();
+}
+
+function saveAcDialog() {
+  const c = store.encounter.combatants.find(x => x.id === store.activeCombatantId);
+  if (c) {
+    const base = store.dialogAcBase;
+    const cover = store.dialogAcCover;
+    const bonus = cover === "HALF" ? 2 : cover === "THREE_QUARTERS" ? 5 : cover === "TOTAL" ? 10 : 0;
+    const effective = base + bonus;
+
+    let conditions = (c.conditions || []).filter(cn => !["half_cover", "three_quarters_cover", "total_cover"].includes(cn));
+    if (cover === "HALF") conditions.push("half_cover");
+    if (cover === "THREE_QUARTERS") conditions.push("three_quarters_cover");
+    if (cover === "TOTAL") conditions.push("total_cover");
+
+    c.baseArmorClass = base;
+    c.armorClass = effective;
+    c.coverType = cover;
+    c.conditions = conditions;
+
+    store.logEvent(`Updated ${c.name} AC to ${effective} (${cover})`, "info");
+    store.save();
+  }
+  closeModal("modal-ac-dialog");
+  renderApp();
+}
+
+// ------------------------------------------
+// 3. EDIT CHARACTER DIALOG (Screenshot 4 & 5)
+// ------------------------------------------
+function openCharacterModal(partyId = null) {
+  store.characterEditTargetId = partyId;
+  const isEdit = !!partyId;
+  const char = isEdit ? store.party.find(p => p.id === partyId) : null;
+
+  document.getElementById("modal-char-title").textContent = isEdit ? `Edit ${char.name}` : "Add Player Character";
+  document.getElementById("modal-char-name").value = char ? char.name : "";
+  document.getElementById("modal-char-player").value = char ? (char.playerName || "") : "";
+  document.getElementById("modal-char-class").value = char ? char.characterClass : "Fighter";
+  document.getElementById("modal-char-level").value = char ? char.level : 1;
+  document.getElementById("modal-char-hp").value = char ? char.maxHp : 10;
+  document.getElementById("modal-char-ac").value = char ? char.armorClass : 14;
+  document.getElementById("modal-char-init").value = char ? char.initiativeModifier : 2;
+  document.getElementById("modal-char-speed").value = char ? char.speed : 30;
+  document.getElementById("modal-char-perc").value = char ? char.passivePerception : 12;
+  document.getElementById("modal-char-dc").value = (char && char.spellDc) ? char.spellDc : "";
+  document.getElementById("modal-char-notes").value = char ? (char.notes || "") : "";
+
+  store.characterAbilitiesEditing = char && char.abilities ? JSON.parse(JSON.stringify(char.abilities)) : [];
+  renderCharacterAbilitiesList();
+  openModal("modal-character-dialog");
+}
+
+function renderCharacterAbilitiesList() {
+  const container = document.getElementById("modal-char-abilities-list");
+  if (!container) return;
+  document.getElementById("modal-char-abilities-count").textContent = `(${store.characterAbilitiesEditing.length})`;
+
+  container.innerHTML = store.characterAbilitiesEditing.map((ab, idx) => `
+    <div class="ability-edit-card">
+      <div class="ability-edit-top-row">
+        <input type="text" class="form-input-outlined" style="flex:1;" placeholder="Ability Name" value="${ab.name}" oninput="store.characterAbilitiesEditing[${idx}].name = this.value;">
+        <select class="form-input-outlined" style="width: 120px;" onchange="store.characterAbilitiesEditing[${idx}].type = this.value;">
+          <option value="Action" ${ab.type === "Action" ? "selected" : ""}>Action</option>
+          <option value="Bonus Action" ${ab.type === "Bonus Action" ? "selected" : ""}>Bonus Action</option>
+          <option value="Reaction" ${ab.type === "Reaction" ? "selected" : ""}>Reaction</option>
+          <option value="Feat / Trait" ${ab.type === "Feat / Trait" ? "selected" : ""}>Feat / Trait</option>
+          <option value="Spell" ${ab.type === "Spell" ? "selected" : ""}>Spell</option>
+        </select>
+        <button class="icon-btn-header crimson" onclick="removeCharacterAbility(${idx})">🗑️</button>
       </div>
-      <div style="display: flex; align-items: center; gap: var(--space-xs);">
-        <input type="number" class="form-input party-init-field" data-id="${c.id}" value="${c.initiativeRoll}" style="width: 70px; text-align: center;">
-        <button class="btn btn-secondary btn-sm" onclick="this.previousElementSibling.value = rollD20() + ${c.initiativeModifier};">Roll</button>
-      </div>
+      <textarea class="form-input-outlined" rows="2" placeholder="Description / mechanics" oninput="store.characterAbilitiesEditing[${idx}].description = this.value;">${ab.description || ""}</textarea>
     </div>
   `).join("");
-
-  openModal("modal-party-initiative");
 }
 
-function submitPartyInitiatives() {
-  document.querySelectorAll(".party-init-field").forEach(field => {
-    const id = field.dataset.id;
-    const val = parseInt(field.value, 10);
-    if (!isNaN(val)) {
-      const combatant = store.encounter.combatants.find(c => c.id === id);
-      if (combatant) combatant.initiativeRoll = val;
-    }
+function addCharacterAbility() {
+  store.characterAbilitiesEditing.push({
+    id: "ab-" + Date.now(),
+    name: "New Feature",
+    type: "Action",
+    description: ""
   });
-
-  if (store.encounter.isCombatStarted) {
-    store.encounter.combatants = sortCombatants(store.encounter.combatants);
-  }
-  store.logEvent("Applied party initiative scores", "info");
-  store.saveToStorage();
-  closeModal("modal-party-initiative");
-  renderApp();
-  showToast("Party initiatives applied!");
+  renderCharacterAbilitiesList();
 }
 
-function rollAllPartyInModal() {
-  document.querySelectorAll(".party-init-field").forEach(field => {
-    const id = field.dataset.id;
-    const c = store.encounter.combatants.find(comb => comb.id === id);
-    if (c) {
-      field.value = rollD20() + c.initiativeModifier;
-    }
-  });
+function removeCharacterAbility(idx) {
+  store.characterAbilitiesEditing.splice(idx, 1);
+  renderCharacterAbilitiesList();
 }
 
-// Add Enemy / Custom Monster Modal
-function openAddEnemyModal() {
-  document.getElementById("modal-enemy-name").value = "";
-  document.getElementById("modal-enemy-hp").value = 15;
-  document.getElementById("modal-enemy-ac").value = 13;
-  document.getElementById("modal-enemy-mod").value = 1;
-  document.getElementById("modal-enemy-count").value = 1;
-  document.getElementById("modal-enemy-cr").value = "CR 1/2";
-  document.getElementById("modal-enemy-speed").value = 30;
-  document.getElementById("modal-enemy-notes").value = "";
-  openModal("modal-add-enemy");
+function rollRandom5eCharacter() {
+  const names = ["Vesper Stonefist", "Theron Stormwind", "Eldrin Dawnseeker", "Rowan Blackthorn", "Kaela Sunstrider"];
+  const classes = ["Fighter", "Rogue", "Wizard", "Cleric", "Barbarian", "Paladin"];
+  const randomName = names[Math.floor(Math.random() * names.length)];
+  const randomClass = classes[Math.floor(Math.random() * classes.length)];
+
+  document.getElementById("modal-char-name").value = randomName;
+  document.getElementById("modal-char-class").value = randomClass;
+  document.getElementById("modal-char-level").value = 1;
+  document.getElementById("modal-char-hp").value = Math.floor(Math.random() * 6) + 10;
+  document.getElementById("modal-char-ac").value = Math.floor(Math.random() * 5) + 13;
+  document.getElementById("modal-char-init").value = Math.floor(Math.random() * 4) + 1;
+  document.getElementById("modal-char-speed").value = 30;
+  document.getElementById("modal-char-perc").value = Math.floor(Math.random() * 5) + 10;
+
+  store.characterAbilitiesEditing = [
+    { id: "ab-r1", name: "Core Feature", type: "Action", description: "Characteristic class feature or weapon maneuver." }
+  ];
+  renderCharacterAbilitiesList();
+  showToast(`Rolled ${randomName}!`);
 }
 
-function submitAddEnemy() {
-  const name = document.getElementById("modal-enemy-name").value.trim();
-  const hp = parseInt(document.getElementById("modal-enemy-hp").value, 10);
-  const ac = parseInt(document.getElementById("modal-enemy-ac").value, 10);
-  const mod = parseInt(document.getElementById("modal-enemy-mod").value, 10) || 0;
-  const count = parseInt(document.getElementById("modal-enemy-count").value, 10) || 1;
-  const cr = document.getElementById("modal-enemy-cr").value.trim();
-  const speed = parseInt(document.getElementById("modal-enemy-speed").value, 10) || 30;
-  const notes = document.getElementById("modal-enemy-notes").value.trim();
-
-  if (!name) {
-    showToast("Please enter a monster name");
-    return;
-  }
-  if (isNaN(hp) || hp <= 0) {
-    showToast("Please enter valid HP");
-    return;
-  }
-  if (isNaN(ac) || ac <= 0) {
-    showToast("Please enter valid AC");
-    return;
-  }
-
-  addEnemyToEncounter(name, hp, ac, mod, count, true, cr, notes, speed);
-  closeModal("modal-add-enemy");
-}
-
-// Character Creator / Editor Modal
-let characterEditTargetId = null;
-
-function openCharacterModal(characterId = null) {
-  characterEditTargetId = characterId;
-  const isEdit = !!characterId;
-  document.getElementById("modal-char-title").textContent = isEdit ? "Edit Character" : "New Player Character";
-
-  if (isEdit) {
-    const pc = store.party.find(p => p.id === characterId);
-    if (!pc) return;
-    document.getElementById("modal-char-name").value = pc.name;
-    document.getElementById("modal-char-player").value = pc.playerName || "";
-    document.getElementById("modal-char-class").value = pc.characterClass;
-    document.getElementById("modal-char-level").value = pc.level;
-    document.getElementById("modal-char-hp").value = pc.maxHp;
-    document.getElementById("modal-char-ac").value = pc.armorClass;
-    document.getElementById("modal-char-mod").value = pc.initiativeModifier;
-    document.getElementById("modal-char-speed").value = pc.speed || 30;
-    document.getElementById("modal-char-percep").value = pc.passivePerception || 10;
-    document.getElementById("modal-char-dc").value = pc.spellDc || "";
-    document.getElementById("modal-char-notes").value = pc.notes || "";
-  } else {
-    document.getElementById("modal-char-name").value = "";
-    document.getElementById("modal-char-player").value = "";
-    document.getElementById("modal-char-class").value = "Fighter";
-    document.getElementById("modal-char-level").value = 1;
-    document.getElementById("modal-char-hp").value = 12;
-    document.getElementById("modal-char-ac").value = 14;
-    document.getElementById("modal-char-mod").value = 0;
-    document.getElementById("modal-char-speed").value = 30;
-    document.getElementById("modal-char-percep").value = 10;
-    document.getElementById("modal-char-dc").value = "";
-    document.getElementById("modal-char-notes").value = "";
-  }
-
-  openModal("modal-character");
-}
-
-function submitCharacterForm() {
+function saveCharacterDialog() {
   const name = document.getElementById("modal-char-name").value.trim();
   const player = document.getElementById("modal-char-player").value.trim();
   const charClass = document.getElementById("modal-char-class").value.trim();
   const level = parseInt(document.getElementById("modal-char-level").value, 10) || 1;
-  const hp = parseInt(document.getElementById("modal-char-hp").value, 10);
-  const ac = parseInt(document.getElementById("modal-char-ac").value, 10);
-  const mod = parseInt(document.getElementById("modal-char-mod").value, 10) || 0;
+  const hp = parseInt(document.getElementById("modal-char-hp").value, 10) || 10;
+  const ac = parseInt(document.getElementById("modal-char-ac").value, 10) || 10;
+  const init = parseInt(document.getElementById("modal-char-init").value, 10) || 0;
   const speed = parseInt(document.getElementById("modal-char-speed").value, 10) || 30;
-  const percep = parseInt(document.getElementById("modal-char-percep").value, 10) || 10;
-  const dcInput = document.getElementById("modal-char-dc").value.trim();
-  const dc = dcInput ? parseInt(dcInput, 10) : null;
+  const perc = parseInt(document.getElementById("modal-char-perc").value, 10) || 10;
+  const dcVal = document.getElementById("modal-char-dc").value.trim();
+  const spellDc = dcVal ? parseInt(dcVal, 10) : null;
   const notes = document.getElementById("modal-char-notes").value.trim();
 
   if (!name) {
     showToast("Name is required");
     return;
   }
-  if (isNaN(hp) || hp <= 0) {
-    showToast("Valid HP is required");
-    return;
-  }
-  if (isNaN(ac) || ac <= 0) {
-    showToast("Valid AC is required");
-    return;
-  }
 
-  if (characterEditTargetId) {
+  if (store.characterEditTargetId) {
     // Edit existing
     store.party = store.party.map(p => {
-      if (p.id === characterEditTargetId) {
+      if (p.id === store.characterEditTargetId) {
         return {
           ...p,
           name, playerName: player, characterClass: charClass, level,
-          maxHp: hp, currentHp: hp, armorClass: ac, initiativeModifier: mod,
-          speed, passivePerception: percep, spellDc: dc, notes
+          maxHp: hp, currentHp: hp, armorClass: ac, initiativeModifier: init,
+          speed, passivePerception: perc, spellDc, notes,
+          abilities: store.characterAbilitiesEditing
         };
       }
       return p;
     });
 
-    // Also sync with active encounter if combatant present
+    // Also update in arena if present
     store.encounter.combatants = store.encounter.combatants.map(c => {
-      if (c.characterId === characterEditTargetId) {
+      if (c.characterId === store.characterEditTargetId) {
         return {
           ...c,
-          name, maxHp: hp, armorClass: ac, baseArmorClass: ac,
-          initiativeModifier: mod, speed, baseSpeed: speed,
-          passivePerception: percep, spellDc: dc, notes
+          name, characterClassOrType: `${charClass} (Lvl ${level})`,
+          maxHp: hp, armorClass: ac, baseArmorClass: ac,
+          initiativeModifier: init, speed, baseSpeed: speed,
+          spellDc, notes, abilities: store.characterAbilitiesEditing
         };
       }
       return c;
     });
     showToast(`Updated ${name}`);
   } else {
-    // Create new
+    // New
     const newPc = {
       id: "pc-" + Date.now(),
       name, playerName: player, characterClass: charClass, level,
-      maxHp: hp, currentHp: hp, tempHp: 0, armorClass: ac, initiativeModifier: mod,
-      speed, passivePerception: percep, spellDc: dc, notes
+      maxHp: hp, currentHp: hp, tempHp: 0, armorClass: ac, initiativeModifier: init,
+      speed, passivePerception: perc, spellDc, notes,
+      abilities: store.characterAbilitiesEditing
     };
     store.party.push(newPc);
-    showToast(`Added ${name} to party!`);
+    showToast(`Created ${name}`);
   }
 
-  store.saveToStorage();
-  closeModal("modal-character");
+  store.save();
+  closeModal("modal-character-dialog");
   renderApp();
 }
 
-function deleteCharacter(characterId) {
-  const pc = store.party.find(p => p.id === characterId);
-  if (!pc) return;
-  if (!confirm(`Are you sure you want to delete ${pc.name}?`)) return;
+// ------------------------------------------
+// 4. DAMAGE / HEAL MODAL
+// ------------------------------------------
+function openDamageHealModal(combatantId) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c) return;
+  store.activeCombatantId = combatantId;
 
-  store.party = store.party.filter(p => p.id !== characterId);
-  store.encounter.combatants = store.encounter.combatants.filter(c => c.characterId !== characterId);
-  store.saveToStorage();
+  document.getElementById("modal-dmg-name").textContent = c.name;
+  document.getElementById("modal-dmg-hp").textContent = `${c.currentHp} / ${c.maxHp} HP (Temp: ${c.tempHp || 0})`;
+  document.getElementById("modal-dmg-input").value = "";
+  openModal("modal-damage-dialog");
+}
+
+function submitDamageAction(isHeal) {
+  const amt = parseInt(document.getElementById("modal-dmg-input").value, 10);
+  if (isNaN(amt) || amt <= 0) {
+    showToast("Enter a positive number");
+    return;
+  }
+  if (isHeal) {
+    applyHealing(store.activeCombatantId, amt);
+  } else {
+    applyDamage(store.activeCombatantId, amt);
+  }
+  closeModal("modal-damage-dialog");
+}
+
+function submitTempHpAction() {
+  const amt = parseInt(document.getElementById("modal-dmg-input").value, 10);
+  if (isNaN(amt) || amt < 0) return;
+  const c = store.encounter.combatants.find(x => x.id === store.activeCombatantId);
+  if (c) {
+    c.tempHp = amt;
+    store.logEvent(`${c.name} gained ${amt} Temp HP`, "info");
+    store.save();
+    renderApp();
+  }
+  closeModal("modal-damage-dialog");
+}
+
+// ------------------------------------------
+// 5. CONDITIONS MODAL
+// ------------------------------------------
+function openConditionsModal(combatantId) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c) return;
+  store.activeCombatantId = combatantId;
+
+  document.getElementById("modal-cond-title").textContent = `Conditions: ${c.name}`;
+  const grid = document.getElementById("modal-cond-grid");
+  grid.innerHTML = CONDITIONS.map(cond => {
+    const isChecked = (c.conditions || []).includes(cond.id);
+    return `
+      <label style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:var(--bg-card-darker); border:1px solid ${isChecked ? cond.color : "var(--border-subtle)"}; border-radius:8px; cursor:pointer;">
+        <input type="checkbox" ${isChecked ? "checked" : ""} onchange="toggleCombatantCondition('${c.id}', '${cond.id}')">
+        <span style="font-size:12px; font-weight:700; color:${isChecked ? cond.color : "var(--text-white)"};">${cond.name}</span>
+      </label>
+    `;
+  }).join("");
+
+  openModal("modal-conditions-dialog");
+}
+
+function toggleCombatantCondition(combatantId, condId) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c) return;
+  const conds = c.conditions || [];
+  c.conditions = conds.includes(condId) ? conds.filter(x => x !== condId) : [...conds, condId];
+  store.save();
   renderApp();
-  showToast(`Deleted ${pc.name}`);
 }
 
-// ==========================================
-// DATA BACKUP & RESTORE (JSON EXPORT/IMPORT)
-// ==========================================
+// ------------------------------------------
+// 6. SINGLE INITIATIVE MODAL
+// ------------------------------------------
+function openInitModal(combatantId) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c) return;
+  store.activeCombatantId = combatantId;
 
-function exportDataAsJson() {
-  const exportPayload = {
-    exportedAt: new Date().toISOString(),
-    version: "1.0",
-    party: store.party,
-    encounter: store.encounter,
-    diceHistory: store.diceHistory
-  };
-
-  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
-  const downloadAnchor = document.createElement("a");
-  downloadAnchor.setAttribute("href", dataStr);
-  downloadAnchor.setAttribute("download", `dnd_combat_tracker_backup_${new Date().toISOString().slice(0, 10)}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
-  showToast("Exported backup JSON!");
+  document.getElementById("modal-init-name").textContent = c.name;
+  document.getElementById("modal-init-val").value = c.initiativeRoll;
+  openModal("modal-init-dialog");
 }
 
-function triggerImportJson() {
-  const fileInput = document.getElementById("file-import-input");
-  if (fileInput) fileInput.click();
-}
-
-function handleFileImport(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (data.party && Array.isArray(data.party)) {
-        store.party = data.party;
+function saveSingleInit() {
+  const c = store.encounter.combatants.find(x => x.id === store.activeCombatantId);
+  if (c) {
+    const score = parseInt(document.getElementById("modal-init-val").value, 10);
+    if (!isNaN(score)) {
+      c.initiativeRoll = score;
+      if (store.encounter.isCombatStarted) {
+        store.encounter.combatants = sortCombatants(store.encounter.combatants);
       }
-      if (data.encounter) {
-        store.encounter = data.encounter;
-      }
-      store.saveToStorage();
+      store.save();
       renderApp();
-      showToast("Data imported successfully!");
-    } catch (err) {
-      alert("Failed to parse JSON file: " + err.message);
     }
-  };
-  reader.readAsText(file);
+  }
+  closeModal("modal-init-dialog");
+}
+
+function rollSingleInit() {
+  const c = store.encounter.combatants.find(x => x.id === store.activeCombatantId);
+  if (c) {
+    document.getElementById("modal-init-val").value = rollD20() + c.initiativeModifier;
+  }
+}
+
+// ------------------------------------------
+// 7. PARTY INITIATIVES BATCH MODAL
+// ------------------------------------------
+function openPartyInitiativesModal() {
+  const pcs = store.encounter.combatants.filter(c => c.isPlayer);
+  if (pcs.length === 0) {
+    showToast("No party members in combat");
+    return;
+  }
+  const list = document.getElementById("modal-party-init-items");
+  list.innerHTML = pcs.map(c => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border-subtle);">
+      <div>
+        <strong style="color:#fff; font-size:14px;">${c.name}</strong>
+        <div style="font-size:11px; color:var(--text-muted);">Modifier: +${c.initiativeModifier}</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <input type="number" class="stepper-value-box party-init-input" data-id="${c.id}" value="${c.initiativeRoll}" style="width:60px; height:38px; font-size:16px;">
+        <button class="btn-prev-turn" style="height:38px; padding:0 12px; border-radius:8px;" onclick="this.previousElementSibling.value = rollD20() + ${c.initiativeModifier};">Roll</button>
+      </div>
+    </div>
+  `).join("");
+
+  openModal("modal-party-inits-dialog");
+}
+
+function savePartyInits() {
+  document.querySelectorAll(".party-init-input").forEach(inp => {
+    const id = inp.dataset.id;
+    const val = parseInt(inp.value, 10);
+    if (!isNaN(val)) {
+      const c = store.encounter.combatants.find(x => x.id === id);
+      if (c) c.initiativeRoll = val;
+    }
+  });
+
+  if (store.encounter.isCombatStarted) {
+    store.encounter.combatants = sortCombatants(store.encounter.combatants);
+  }
+  store.save();
+  closeModal("modal-party-inits-dialog");
+  renderApp();
+  showToast("Party initiatives applied!");
+}
+
+function rollAllPartyInits() {
+  document.querySelectorAll(".party-init-input").forEach(inp => {
+    const id = inp.dataset.id;
+    const c = store.encounter.combatants.find(x => x.id === id);
+    if (c) inp.value = rollD20() + c.initiativeModifier;
+  });
+}
+
+// ------------------------------------------
+// 8. ADD ENEMY MODAL
+// ------------------------------------------
+function openAddEnemyModal() {
+  document.getElementById("modal-enemy-name").value = "";
+  document.getElementById("modal-enemy-hp").value = 11;
+  document.getElementById("modal-enemy-ac").value = 12;
+  document.getElementById("modal-enemy-init").value = 1;
+  document.getElementById("modal-enemy-speed").value = 30;
+  document.getElementById("modal-enemy-notes").value = "";
+  openModal("modal-enemy-dialog");
+}
+
+function saveCustomEnemy() {
+  const name = document.getElementById("modal-enemy-name").value.trim() || "Goblin";
+  const hp = parseInt(document.getElementById("modal-enemy-hp").value, 10) || 10;
+  const ac = parseInt(document.getElementById("modal-enemy-ac").value, 10) || 12;
+  const initMod = parseInt(document.getElementById("modal-enemy-init").value, 10) || 0;
+  const speed = parseInt(document.getElementById("modal-enemy-speed").value, 10) || 30;
+  const notes = document.getElementById("modal-enemy-notes").value.trim();
+
+  store.encounter.combatants.push({
+    id: "enemy-" + Date.now(),
+    name: name,
+    isPlayer: false,
+    characterClassOrType: "Enemy",
+    maxHp: hp,
+    currentHp: hp,
+    tempHp: 0,
+    armorClass: ac,
+    baseArmorClass: ac,
+    coverType: "NONE",
+    initiativeModifier: initMod,
+    initiativeRoll: rollD20() + initMod,
+    speed: speed,
+    baseSpeed: speed,
+    isDifficultTerrain: false,
+    spellDc: null,
+    notes: notes,
+    abilities: [],
+    conditions: [],
+    deathSavesSuccess: 0,
+    deathSavesFailure: 0,
+    isStabilized: false,
+    isDead: false
+  });
+
+  store.encounter.combatants = sortCombatants(store.encounter.combatants);
+  store.logEvent(`Added ${name} to combat`, "info");
+  store.save();
+  closeModal("modal-enemy-dialog");
+  renderApp();
+  showToast(`Added ${name}!`);
+}
+
+// ------------------------------------------
+// 9. LOG MODAL
+// ------------------------------------------
+function openLogModal() {
+  const list = document.getElementById("modal-log-items");
+  list.innerHTML = store.encounter.log.map(item => `
+    <div style="padding:6px 8px; background:var(--bg-card-darker); border-radius:6px; font-size:12px; border-left:3px solid ${item.type === 'turn' ? 'var(--color-gold)' : item.type === 'damage' ? '#ef4444' : item.type === 'heal' ? '#10b981' : 'var(--border-card)'};">
+      <span style="color:var(--text-subtle); font-size:11px;">[R${item.round} ${item.time}]</span> ${item.text}
+    </div>
+  `).join("") || "<span style='color:var(--text-muted);'>No log entries yet.</span>";
+  openModal("modal-log-dialog");
 }
 
 // ==========================================
-// APPLICATION INITIALIZATION
+// APP INITIALIZATION
 // ==========================================
-
 document.addEventListener("DOMContentLoaded", () => {
-  // Navigation tab click listeners
-  document.querySelectorAll("[data-tab]").forEach(button => {
-    button.addEventListener("click", () => {
-      store.currentTab = button.dataset.tab;
+  // Bottom Navigation tabs click
+  document.querySelectorAll(".nav-tab-item").forEach(item => {
+    item.addEventListener("click", () => {
+      store.currentTab = item.dataset.tab;
       renderApp();
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
   });
 
-  // Modal backdrop click to close
-  document.querySelectorAll(".modal-overlay").forEach(overlay => {
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) {
-        overlay.classList.remove("open");
+  // Modal Backdrop click to close
+  document.querySelectorAll(".modal-backdrop").forEach(backdrop => {
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) {
+        backdrop.classList.remove("open");
       }
     });
   });
-
-  // Register service worker for offline / PWA support
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
 
   // Initial render
   renderApp();
