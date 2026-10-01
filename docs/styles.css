@@ -251,11 +251,434 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.1s;
 }
 
 .btn-stop-combat:hover {
   background: rgba(239, 68, 68, 0.35);
+  transform: scale(1.04);
+}
+
+/* Preparation Mode Controls in Arena Header */
+.prep-controls-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-prep-action {
+  width: 100%;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+}
+
+.btn-prep-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-prep-action.solid-gold {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: #1a1202;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+}
+
+.btn-prep-action.solid-gold:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.btn-prep-action.outline-gold {
+  background: rgba(217, 119, 6, 0.1);
+  border: 1.5px solid var(--color-gold);
+  color: var(--color-gold-light);
+}
+
+.btn-prep-action.outline-gold:hover {
+  background: rgba(217, 119, 6, 0.2);
+}
+
+.prep-status-banner {
+  margin: 0 12px 10px 12px;
+  background: rgba(30, 24, 45, 0.85);
+  border: 1px dashed #4b3e6b;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.4;
+}
+
+.round-indicator-pill.prep {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.18);
+  color: #a5b4fc;
+}
+
+/* End Combat Options */
+.end-combat-option-btn {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-card-darker);
+  border: 1.5px solid var(--border-card);
+  border-radius: 14px;
+  color: var(--text-white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.end-combat-option-btn:hover {
+  border-color: var(--color-gold);
+  background: #271f3a;
+  transform: translateX(2px);
+}
+
+.end-combat-option-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-white);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.end-combat-option-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* ==========================================
+   DICE ROLLER STYLES (Multi-Dice & Modifiers)
+   ========================================== */
+.dice-screen-container {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.dice-mode-segmented {
+  display: flex;
+  background: var(--bg-card-darker);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.dice-mode-tab {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.dice-mode-tab.active {
+  background: var(--color-gold);
+  color: #1a1202;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+}
+
+/* Polyhedral Dice Selector Grid */
+.dice-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.die-select-btn {
+  height: 52px;
+  background: var(--bg-card-darker);
+  border: 1.5px solid var(--border-card);
+  border-radius: 12px;
+  color: var(--text-white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  user-select: none;
+}
+
+.die-select-btn:hover {
+  border-color: var(--color-gold);
+}
+
+.die-select-btn.selected {
+  background: rgba(217, 119, 6, 0.2);
+  border-color: var(--color-gold);
+  color: var(--color-gold-light);
+  box-shadow: 0 0 14px rgba(217, 119, 6, 0.25);
+}
+
+.die-select-name {
+  font-size: 13.5px;
+  font-weight: 800;
+}
+
+.die-select-badge {
+  font-size: 9px;
+  color: var(--text-muted);
+  line-height: 1;
+  margin-top: 2px;
+}
+
+/* Stepper Row with Count & Modifier */
+.dice-stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-card-darker);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.dice-stepper-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-dice-stepper {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #2a223d;
+  border: 1px solid var(--border-card);
+  color: var(--text-white);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-dice-stepper:hover {
+  background: #392f52;
+  border-color: var(--color-gold);
+}
+
+.dice-num-box {
+  width: 58px;
+  height: 36px;
+  background: #181324;
+  border: 1.5px solid var(--border-card);
+  border-radius: 8px;
+  color: var(--color-gold-light);
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* Quick Chips Container */
+.quick-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.quick-chip {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: var(--bg-card-darker);
+  border: 1px solid var(--border-card);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.quick-chip:hover {
+  border-color: var(--color-gold);
+  color: var(--text-white);
+}
+
+.quick-chip.selected {
+  background: var(--color-gold);
+  color: #1a1202;
+  border-color: var(--color-gold);
+}
+
+/* Mixed Dice Pool Tray Builder */
+.dice-tray-preview-bar {
+  background: #151120;
+  border: 1.5px dashed #4a3e68;
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dice-tray-formula-text {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-gold-light);
+  letter-spacing: 0.5px;
+}
+
+.dice-tray-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tray-die-pill {
+  background: #2a223d;
+  border: 1px solid var(--color-gold);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-white);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tray-die-remove {
+  color: #f43f5e;
+  cursor: pointer;
+  font-weight: 900;
+  margin-left: 2px;
+}
+
+/* Roll Result Display */
+.roll-result-card {
+  background: linear-gradient(180deg, #241c36, #1b1529);
+  border: 1.5px solid var(--color-gold);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 0 25px rgba(217, 119, 6, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.roll-result-card.nat20 {
+  border-color: #10b981;
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.35);
+}
+
+.roll-result-card.nat1 {
+  border-color: #ef4444;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.35);
+}
+
+.roll-total-num {
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--color-gold-light);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  margin: 6px 0;
+}
+
+.roll-total-num.green {
+  color: #34d399;
+}
+
+.roll-total-num.red {
+  color: #ef4444;
+}
+
+.roll-breakdown-details {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.dice-breakdown-chips-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 10px 0 4px 0;
+}
+
+.die-result-pill {
+  padding: 4px 9px;
+  background: var(--bg-card-darker);
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-white);
+}
+
+.die-result-pill.dropped {
+  opacity: 0.4;
+  text-decoration: line-through;
+  border-style: dashed;
+}
+
+.die-result-pill.crit {
+  border-color: #34d399;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.die-result-pill.fumble {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* Roll History Items */
+.roll-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--bg-card-darker);
+  border-radius: 8px;
+  border-left: 3px solid var(--color-gold);
+  font-size: 12px;
 }
 
 /* ==========================================
@@ -1332,3 +1755,168 @@ body {
   font-size: 12.5px;
   font-weight: 700;
 }
+
+/* ==========================================
+   MULTI-DICE POOL & FORMULA BUILDER
+   ========================================== */
+.dice-pool-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dice-formula-bar {
+  background: var(--bg-card-darker);
+  border: 1.5px solid var(--border-gold);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.15);
+}
+
+.dice-formula-text {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--color-gold-light);
+  letter-spacing: 0.5px;
+}
+
+.dice-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+@media (min-width: 480px) {
+  .dice-selector-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+.die-card-btn {
+  background: var(--bg-card-darker);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.die-card-btn:hover {
+  border-color: var(--color-gold);
+  background: #2a223e;
+}
+
+.die-card-btn.active-in-pool {
+  border-color: var(--color-gold);
+  background: rgba(245, 158, 11, 0.18);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+}
+
+.die-card-icon {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+.die-card-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-white);
+}
+
+.die-card-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--color-gold);
+  color: #1a1202;
+  font-size: 11px;
+  font-weight: 900;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--bg-app);
+}
+
+.die-stepper-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.btn-die-mini {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--text-white);
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.btn-die-mini:hover {
+  background: var(--color-gold);
+  color: #1a1202;
+}
+
+.modifier-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quick-modifier-chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.chip-mod-btn {
+  background: var(--bg-card-darker);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.chip-mod-btn.active {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--color-gold);
+  color: var(--color-gold-light);
+}
+
+.roll-breakdown-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--bg-card-darker);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+

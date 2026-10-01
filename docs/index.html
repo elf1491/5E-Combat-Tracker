@@ -422,6 +422,62 @@
     </div>
   </div>
 
+  <!-- 10. End Combat Modal -->
+  <div class="modal-backdrop" id="modal-end-combat-dialog">
+    <div class="dialog-container" style="max-width: 440px;">
+      <div class="dialog-header">
+        <span class="dialog-header-icon">🏁</span>
+        <div class="dialog-header-titles">
+          <span class="dialog-main-title">Conclude Combat</span>
+          <span class="dialog-subtitle">Choose how you want to finish this encounter</span>
+        </div>
+      </div>
+      <div class="dialog-body" style="gap: 10px;">
+        <button class="end-combat-option-btn" onclick="confirmEndCombat('keep')">
+          <div>
+            <div class="end-combat-option-title">
+              <span>🛡️</span>
+              <span>End Combat & Keep Roster</span>
+            </div>
+            <div class="end-combat-option-desc">
+              Returns to Preparation mode. Preserves all combatants & current HP so you can adjust stats or start another round.
+            </div>
+          </div>
+          <span style="font-size: 18px; color: var(--color-gold);">➔</span>
+        </button>
+
+        <button class="end-combat-option-btn" onclick="confirmEndCombat('clear_enemies')">
+          <div>
+            <div class="end-combat-option-title">
+              <span>🧹</span>
+              <span>End & Clear All Enemies</span>
+            </div>
+            <div class="end-combat-option-desc">
+              Removes all monsters and keeps only player characters in preparation for the next battle.
+            </div>
+          </div>
+          <span style="font-size: 18px; color: var(--color-gold);">➔</span>
+        </button>
+
+        <button class="end-combat-option-btn" onclick="confirmEndCombat('reset_all')">
+          <div>
+            <div class="end-combat-option-title">
+              <span>🔄</span>
+              <span>Reset Entire Encounter</span>
+            </div>
+            <div class="end-combat-option-desc">
+              Restores the encounter back to fresh starting party state.
+            </div>
+          </div>
+          <span style="font-size: 18px; color: var(--color-gold);">➔</span>
+        </button>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn-dialog-cancel" onclick="closeModal('modal-end-combat-dialog')">Keep Fighting (Cancel)</button>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

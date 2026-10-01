@@ -251,6 +251,15 @@ class DndStore {
     this.dialogSpeedDiff = false;
     this.dialogAcBase = 14;
     this.dialogAcCover = "NONE";
+
+    // Dice Roller State (Multi-dice & Modifiers)
+    this.diceSelectedSides = 20;
+    this.diceCount = 1;
+    this.diceModifier = 0;
+    this.diceRollMode = "NORMAL"; // "NORMAL", "ADVANTAGE", "DISADVANTAGE"
+    this.diceTray = { 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 20: 0, 100: 0 };
+    this.diceSubTab = "roller"; // "roller", "conditions", "rules"
+    this.diceInputMode = "standard"; // "standard", "tray"
   }
 
   load(key, fallback) {
@@ -405,12 +414,61 @@ function prevTurn() {
   renderApp();
 }
 
-function endCombat() {
-  store.encounter.isCombatStarted = false;
-  store.logEvent("🏁 Combat ended.", "info");
+function startCombat(autoRollMonsters = true) {
+  if (store.encounter.combatants.length === 0) {
+    showToast("No combatants in arena");
+    return;
+  }
+  // Automatically roll initiative for monsters, keeping player rolls intact
+  store.encounter.combatants = store.encounter.combatants.map(c => {
+    if (!c.isPlayer && autoRollMonsters) {
+      return { ...c, initiativeRoll: rollD20() + c.initiativeModifier };
+    }
+    return c;
+  });
+  store.encounter.combatants = sortCombatants(store.encounter.combatants);
+  const firstLivingIdx = store.encounter.combatants.findIndex(c => !c.isDead);
+  store.encounter.currentTurnIndex = firstLivingIdx >= 0 ? firstLivingIdx : 0;
+  store.encounter.round = 1;
+  store.encounter.isCombatStarted = true;
+
+  const firstActor = store.encounter.combatants[store.encounter.currentTurnIndex]?.name || "Unknown";
+  store.logEvent(`⚔️ Combat Started! Round 1 begins: ${firstActor}'s turn.`, "turn");
   store.save();
   renderApp();
-  showToast("Combat ended");
+  showToast(`Combat Started! ${firstActor}'s turn.`);
+}
+
+function openEndCombatModal() {
+  openModal("modal-end-combat-dialog");
+}
+
+function confirmEndCombat(mode = "keep") {
+  store.encounter.isCombatStarted = false;
+  store.encounter.round = 1;
+  store.encounter.currentTurnIndex = 0;
+
+  if (mode === "clear_enemies") {
+    store.encounter.combatants = store.encounter.combatants.filter(c => c.isPlayer);
+    store.logEvent("🏁 Combat ended. Monsters cleared from encounter.", "info");
+    showToast("Combat ended • Monsters cleared");
+  } else if (mode === "reset_all") {
+    store.encounter = getInitialEncounter();
+    store.encounter.isCombatStarted = false;
+    store.logEvent("🔄 Encounter reset to preparation mode.", "info");
+    showToast("Encounter reset");
+  } else {
+    store.logEvent("🏁 Combat ended • Entered Preparation Mode.", "info");
+    showToast("Combat ended • Preparation Mode");
+  }
+
+  store.save();
+  closeModal("modal-end-combat-dialog");
+  renderApp();
+}
+
+function endCombat() {
+  openEndCombatModal();
 }
 
 function removeCombatant(id) {
@@ -553,10 +611,10 @@ function renderCombatScreen() {
     <!-- Top Header Card (Screenshot: Round 1, 2 PCs • 2 Foes, Dice, Clock, Add) -->
     <div class="arena-header-card">
       <div class="arena-header-top-row">
-        <div style="display: flex; align-items: center;">
-          <div class="round-indicator-pill">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="round-indicator-pill ${enc.isCombatStarted ? "active" : "prep"}">
             <span>⚔️</span>
-            <span>Round ${enc.round}</span>
+            <span>${enc.isCombatStarted ? `Round ${enc.round}` : "Preparation"}</span>
           </div>
           <span class="arena-counts-text">${playerCount} PCs • ${enemyCount} Foes</span>
         </div>
@@ -574,24 +632,40 @@ function renderCombatScreen() {
         </div>
       </div>
 
-      <!-- Turn Controls Row (Prev, Next Turn, Stop) -->
-      <div class="turn-controls-row">
-        <button class="btn-prev-turn" onclick="prevTurn()">
-          <span>|◀</span>
-          <span>Prev</span>
-        </button>
-        <button class="btn-next-turn" onclick="nextTurn()">
-          <span>Next Turn</span>
-          <span>▶|</span>
-        </button>
-        <button class="btn-stop-combat" onclick="endCombat()" title="End Combat">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
-        </button>
-      </div>
+      ${enc.isCombatStarted ? `
+        <!-- Turn Controls Row (Prev, Next Turn, Stop) -->
+        <div class="turn-controls-row">
+          <button class="btn-prev-turn" onclick="prevTurn()">
+            <span>|◀</span>
+            <span>Prev</span>
+          </button>
+          <button class="btn-next-turn" onclick="nextTurn()">
+            <span>Next Turn</span>
+            <span>▶|</span>
+          </button>
+          <button class="btn-stop-combat" onclick="openEndCombatModal()" title="End Combat">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
+          </button>
+        </div>
+      ` : `
+        <!-- Preparation Mode Controls -->
+        <div class="prep-controls-col">
+          ${playerCount > 0 ? `
+            <button class="btn-prep-action outline-gold" onclick="openPartyInitiativesModal()">
+              <span>🎲</span>
+              <span>Input Player Initiatives</span>
+            </button>
+          ` : ""}
+          <button class="btn-prep-action solid-gold" onclick="startCombat(true)" ${combatants.length === 0 ? "disabled" : ""}>
+            <span>⚔️</span>
+            <span>${enemyCount > 0 ? "Start Combat (Auto-Rolls Monsters)" : "Start Combat"}</span>
+          </button>
+        </div>
+      `}
     </div>
 
-    <!-- CURRENT TURN SPOTLIGHT CARD (Screenshot 1 & 6) -->
-    ${active ? `
+    <!-- CURRENT TURN SPOTLIGHT CARD OR PREPARATION BANNER -->
+    ${(enc.isCombatStarted && active) ? `
       <div class="current-turn-card">
         <!-- Top row: CURRENT TURN, Player/Monster, On Deck -->
         <div class="current-turn-top-row">
@@ -719,9 +793,30 @@ function renderCombatScreen() {
               <div class="action-economy-title" style="color: #f1f5f9;">
                 <span>👟</span> Move
               </div>
-              <span class="action-economy-desc">${active.speed}ft Speed (Walk, climb, swim)</span>
+              <span class="action-economy-desc">${active ? active.speed : 30}ft Speed (Walk, climb, swim)</span>
             </div>
           </div>
+        </div>
+      </div>
+    ` : `
+      <div class="prep-status-banner">
+        <span style="font-size: 20px;">🛡️</span>
+        <div>
+          <strong style="color: var(--color-gold-light); display: block; margin-bottom: 2px;">Encounter in Preparation</strong>
+          <span>Adjust combatant stats, initiatives, or HP below. Press <strong>Start Combat</strong> above when ready to begin Round 1.</span>
+        </div>
+      </div>
+    `}
+
+    ${combatants.length === 0 ? `
+      <div class="dialog-inner-card" style="margin: 12px; text-align: center; padding: 24px 16px; align-items: center;">
+        <span style="font-size: 32px;">⚔️</span>
+        <span style="font-size: 16px; font-weight: 800; color: var(--color-gold); margin-top: 6px;">No Combatants in Arena</span>
+        <p style="font-size: 12px; color: var(--text-muted); max-width: 320px; margin: 6px 0 16px 0;">Add your party members or spawn monsters from the SRD bestiary to assemble the encounter.</p>
+        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 280px;">
+          <button class="btn-prep-action solid-gold" onclick="addAllPartyToEncounter()">Add Entire Party</button>
+          <button class="btn-prep-action outline-gold" onclick="store.currentTab = 'bestiary'; renderApp();">Browse Bestiary</button>
+          <button class="btn-prev-turn" style="height: 42px; width: 100%; border-radius: 12px;" onclick="openAddEnemyModal()">+ Add Custom Monster</button>
         </div>
       </div>
     ` : ""}
@@ -950,65 +1045,589 @@ function renderBestiaryScreen() {
 }
 
 // ------------------------------------------
-// DICE & RULES SCREEN
+// DICE & RULES SCREEN (Enhanced Multi-Dice & Modifiers)
 // ------------------------------------------
 function renderDiceScreen() {
   const last = store.lastRoll;
+  const subTab = store.diceSubTab || "roller";
+  const inputMode = store.diceInputMode || "standard";
+  const sides = store.diceSelectedSides || 20;
+  const count = store.diceCount || 1;
+  const mod = store.diceModifier || 0;
+  const mode = store.diceRollMode || "NORMAL";
+
+  const modStr = mod !== 0 ? (mod > 0 ? `+${mod}` : `${mod}`) : "";
+  const diceOptions = [4, 6, 8, 10, 12, 20, 100];
+
+  // Calculate mixed tray formula
+  const trayEntries = Object.entries(store.diceTray || {}).filter(([_, qty]) => qty > 0);
+  const trayFormula = trayEntries.length > 0 
+    ? trayEntries.map(([s, qty]) => `${qty}d${s === "100" ? "%" : s}`).join(" + ") + (mod !== 0 ? ` ${mod > 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`}` : "")
+    : "Empty Tray";
+  const trayTotalDiceCount = trayEntries.reduce((acc, [_, qty]) => acc + qty, 0);
 
   return `
-    <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 12px;">
-      <h2 style="font-size: 18px; font-weight: 800; color: var(--color-gold);">DICE & 5E RULES</h2>
+    <div class="dice-screen-container">
+      <!-- Top Sub-Tabs (Dice Roller, 5e Conditions, Rules Reference) -->
+      <div class="dice-mode-segmented">
+        <button class="dice-mode-tab ${subTab === 'roller' ? 'active' : ''}" onclick="switchDiceSubTab('roller')">
+          🎲 Dice Roller
+        </button>
+        <button class="dice-mode-tab ${subTab === 'conditions' ? 'active' : ''}" onclick="switchDiceSubTab('conditions')">
+          📜 Conditions Guide
+        </button>
+        <button class="dice-mode-tab ${subTab === 'rules' ? 'active' : ''}" onclick="switchDiceSubTab('rules')">
+          ⚔️ Combat Rules
+        </button>
+      </div>
 
-      <!-- Dice Roller -->
-      <div class="dialog-inner-card">
-        <span class="dialog-inner-title">Polyhedral Dice</span>
-        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 8px 0;">
-          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px;" onclick="rollDieDirect(4)">d4</button>
-          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px;" onclick="rollDieDirect(6)">d6</button>
-          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px;" onclick="rollDieDirect(8)">d8</button>
-          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px;" onclick="rollDieDirect(10)">d10</button>
-          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px;" onclick="rollDieDirect(12)">d12</button>
-          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 14px; border-color: var(--color-gold); color: var(--color-gold-light);" onclick="rollDieDirect(20)">d20</button>
-          <button class="btn-stepper" style="width: 100%; height: 44px; font-size: 13px;" onclick="rollDieDirect(100)">%</button>
+      ${subTab === "roller" ? `
+        <!-- Roller View Mode Switcher: Single Die vs Mixed Pool -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+          <span style="font-size: 11px; font-weight: 800; color: var(--color-gold); text-transform: uppercase; letter-spacing: 0.5px;">
+            ${inputMode === "standard" ? "Dice Selector & Modifier" : "Multi-Dice Custom Pool Tray"}
+          </span>
+          <button class="btn-header-link gold" style="font-size: 11.5px;" onclick="store.diceInputMode = store.diceInputMode === 'standard' ? 'tray' : 'standard'; renderApp();">
+            ${inputMode === "standard" ? "Switch to Mixed Dice Tray ➔" : "➔ Switch to Standard Die"}
+          </button>
         </div>
 
+        ${inputMode === "standard" ? `
+          <!-- STANDARD MULTI-DICE MODE -->
+          <div class="dialog-inner-card">
+            <!-- Polyhedral Dice Grid -->
+            <span class="dialog-inner-title">1. Select Die Type</span>
+            <div class="dice-selector-grid">
+              ${diceOptions.map(s => `
+                <button class="die-select-btn ${sides === s ? 'selected' : ''}" onclick="selectDieType(${s})">
+                  <span class="die-select-name">d${s === 100 ? '%' : s}</span>
+                  <span class="die-select-badge">${s === 20 ? 'Standard' : s === 100 ? 'Percent' : `${s}-sided`}</span>
+                </button>
+              `).join("")}
+            </div>
+
+            <!-- Dice Count Stepper & Quick Chips -->
+            <div style="margin-top: 8px;">
+              <span class="dialog-inner-title">2. Number of Dice (Count)</span>
+              <div class="dice-stepper-row" style="margin-top: 4px;">
+                <div class="dice-stepper-group">
+                  <button class="btn-dice-stepper" onclick="adjustDiceCount(-1)">−</button>
+                  <input type="number" class="dice-num-box" min="1" max="50" value="${count}" onchange="setDiceCount(parseInt(this.value, 10) || 1)">
+                  <button class="btn-dice-stepper" onclick="adjustDiceCount(1)">+</button>
+                </div>
+                <div class="quick-chips-row">
+                  ${[1, 2, 3, 4, 6, 8, 10, 12, 20].map(c => `
+                    <button class="quick-chip ${count === c ? 'selected' : ''}" onclick="setDiceCount(${c})">${c}x</button>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+
+            <!-- Modifier Stepper & Quick Chips -->
+            <div style="margin-top: 10px;">
+              <span class="dialog-inner-title">3. Add Modifier (End of Roll)</span>
+              <div class="dice-stepper-row" style="margin-top: 4px;">
+                <div class="dice-stepper-group">
+                  <button class="btn-dice-stepper" onclick="adjustDiceModifier(-1)">−</button>
+                  <input type="number" class="dice-num-box" value="${mod}" onchange="setDiceModifier(parseInt(this.value, 10) || 0)">
+                  <button class="btn-dice-stepper" onclick="adjustDiceModifier(1)">+</button>
+                </div>
+                <div class="quick-chips-row">
+                  ${[-5, -2, -1, 0, 1, 2, 3, 4, 5, 7, 10].map(m => `
+                    <button class="quick-chip ${mod === m ? 'selected' : ''}" onclick="setDiceModifier(${m})">${m >= 0 ? `+${m}` : m}</button>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+
+            <!-- Advantage / Disadvantage (if 1d20) -->
+            ${(sides === 20 && count === 1) ? `
+              <div style="margin-top: 10px;">
+                <span class="dialog-inner-title">d20 Advantage / Disadvantage</span>
+                <div style="display: flex; gap: 6px; margin-top: 4px;">
+                  <button class="quick-chip ${mode === 'NORMAL' ? 'selected' : ''}" style="flex:1; padding: 7px 0; text-align: center;" onclick="setDiceRollMode('NORMAL')">Normal</button>
+                  <button class="quick-chip ${mode === 'ADVANTAGE' ? 'selected' : ''}" style="flex:1; padding: 7px 0; text-align: center;" onclick="setDiceRollMode('ADVANTAGE')">Advantage (Take High)</button>
+                  <button class="quick-chip ${mode === 'DISADVANTAGE' ? 'selected' : ''}" style="flex:1; padding: 7px 0; text-align: center;" onclick="setDiceRollMode('DISADVANTAGE')">Disadvantage (Take Low)</button>
+                </div>
+              </div>
+            ` : ""}
+
+            <!-- PRIMARY ROLL BUTTON -->
+            <button class="btn-prep-action solid-gold" style="margin-top: 14px; height: 52px; font-size: 16px;" onclick="rollConfiguredDice()">
+              <span>🎲</span>
+              <span>ROLL ${count}d${sides === 100 ? '%' : sides} ${modStr ? ` ${modStr}` : ""} ${mode === 'ADVANTAGE' ? '(Adv)' : mode === 'DISADVANTAGE' ? '(Disadv)' : ''}</span>
+            </button>
+          </div>
+        ` : `
+          <!-- MIXED DICE POOL TRAY MODE (Mix Multiple Dice Types) -->
+          <div class="dialog-inner-card">
+            <span class="dialog-inner-title">Custom Multi-Dice Pool Builder</span>
+            <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px;">
+              Add any combination of dice into your tray (e.g. 2d6 + 1d8 + 3). Tap + / − to adjust dice.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px;">
+              ${diceOptions.map(s => {
+                const qty = (store.diceTray && store.diceTray[s]) || 0;
+                return `
+                  <div style="background: var(--bg-card-darker); border: 1.5px solid ${qty > 0 ? 'var(--color-gold)' : 'var(--border-card)'}; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; align-items: center;">
+                    <strong style="color: ${qty > 0 ? 'var(--color-gold-light)' : '#fff'}; font-size: 14px;">d${s === 100 ? '%' : s}</strong>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                      <button class="btn-dice-stepper" style="width: 26px; height: 26px; font-size: 14px;" onclick="adjustTrayDie(${s}, -1)">−</button>
+                      <span style="font-weight: 800; font-size: 14px; min-width: 18px; text-align: center; color: ${qty > 0 ? 'var(--color-gold)' : 'var(--text-muted)'};">${qty}</span>
+                      <button class="btn-dice-stepper" style="width: 26px; height: 26px; font-size: 14px;" onclick="adjustTrayDie(${s}, 1)">+</button>
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+
+            <!-- Active Tray Preview Bar -->
+            <div class="dice-tray-preview-bar" style="margin-top: 12px;">
+              <div>
+                <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Active Tray Formula</span>
+                <span class="dice-tray-formula-text">${trayFormula}</span>
+              </div>
+              <button class="btn-header-link crimson" style="font-size: 12px;" onclick="clearDiceTray()">Clear Tray</button>
+            </div>
+
+            <!-- Modifier Stepper for Tray -->
+            <div style="margin-top: 10px;">
+              <span class="dialog-inner-title">Add Modifier to Tray Total</span>
+              <div class="dice-stepper-row" style="margin-top: 4px;">
+                <div class="dice-stepper-group">
+                  <button class="btn-dice-stepper" onclick="adjustDiceModifier(-1)">−</button>
+                  <input type="number" class="dice-num-box" value="${mod}" onchange="setDiceModifier(parseInt(this.value, 10) || 0)">
+                  <button class="btn-dice-stepper" onclick="adjustDiceModifier(1)">+</button>
+                </div>
+                <div class="quick-chips-row">
+                  ${[-5, -2, -1, 0, 1, 2, 3, 4, 5, 7, 10].map(m => `
+                    <button class="quick-chip ${mod === m ? 'selected' : ''}" onclick="setDiceModifier(${m})">${m >= 0 ? `+${m}` : m}</button>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+
+            <!-- ROLL TRAY BUTTON -->
+            <button class="btn-prep-action solid-gold" style="margin-top: 14px; height: 52px; font-size: 16px;" onclick="rollDicePool()" ${trayTotalDiceCount === 0 ? 'disabled' : ''}>
+              <span>🎲</span>
+              <span>ROLL TRAY (${trayFormula})</span>
+            </button>
+          </div>
+        `}
+
+        <!-- QUICK 5E PRESET BUTTONS -->
+        <div class="dialog-inner-card">
+          <span class="dialog-inner-title">⚡ Quick 5e Presets</span>
+          <div class="quick-chips-row" style="margin-top: 6px;">
+            <button class="quick-chip" onclick="quickRollPreset('d20_check')">1d20 Check</button>
+            <button class="quick-chip" onclick="quickRollPreset('d20_adv')">1d20 (Advantage)</button>
+            <button class="quick-chip" onclick="quickRollPreset('greatsword')">2d6+3 Greatsword</button>
+            <button class="quick-chip" onclick="quickRollPreset('longsword')">1d8+3 Longsword</button>
+            <button class="quick-chip" onclick="quickRollPreset('greataxe')">1d12+3 Greataxe</button>
+            <button class="quick-chip" onclick="quickRollPreset('fireball')">8d6 Fireball</button>
+            <button class="quick-chip" onclick="quickRollPreset('stats_4d6')">4d6 Drop Lowest (Stats)</button>
+            <button class="quick-chip" onclick="quickRollPreset('cantrip_d10')">1d10 Cantrip</button>
+          </div>
+        </div>
+
+        <!-- ACTIVE ROLL RESULT SPOTLIGHT CARD -->
         ${last ? `
-          <div class="effective-highlight-banner" style="justify-content: center; flex-direction: column; padding: 14px;">
-            <span style="font-size: 32px; font-weight: 900; color: ${last.isNat20 ? "#34d399" : last.isNat1 ? "#ef4444" : "var(--color-gold-light)"};">
+          <div class="roll-result-card ${last.isNat20 ? 'nat20' : last.isNat1 ? 'nat1' : ''}">
+            <span style="font-size: 12px; font-weight: 800; letter-spacing: 1px; color: ${last.isNat20 ? '#34d399' : last.isNat1 ? '#ef4444' : 'var(--color-gold)'}; text-transform: uppercase;">
+              ${last.isNat20 ? '🌟 NATURAL 20! CRITICAL HIT!' : last.isNat1 ? '💀 NATURAL 1! CRITICAL FUMBLE!' : 'ROLL RESULT'}
+            </span>
+
+            <div class="roll-total-num ${last.isNat20 ? 'green' : last.isNat1 ? 'red' : ''}">
               ${last.total}
-            </span>
-            <span style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-              ${last.dice} Roll ${last.isNat20 ? "🌟 NATURAL 20!" : last.isNat1 ? "💀 NATURAL 1 FUMBLE" : ""}
-            </span>
+            </div>
+
+            <div style="font-size: 14px; font-weight: 800; color: var(--text-white);">
+              ${last.formula}
+            </div>
+
+            <!-- Dice Individual Badges -->
+            ${last.rolls && last.rolls.length > 0 ? `
+              <div class="dice-breakdown-chips-row">
+                ${last.rolls.map((r, idx) => `
+                  <span class="die-result-pill ${r.dropped ? 'dropped' : ''} ${r.value === 20 && last.sides === 20 ? 'crit' : r.value === 1 && last.sides === 20 ? 'fumble' : ''}">
+                    ${r.label || `Die ${idx+1}`}: ${r.value}${r.dropped ? ' (dropped)' : ''}
+                  </span>
+                `).join("")}
+                ${last.modifier !== 0 ? `
+                  <span class="die-result-pill" style="border-color: var(--color-gold); color: var(--color-gold-light);">
+                    Mod: ${last.modifier > 0 ? `+${last.modifier}` : last.modifier}
+                  </span>
+                ` : ""}
+              </div>
+            ` : ""}
+
+            <div class="roll-breakdown-details">
+              ${last.calculation || `Total: ${last.total}`} • Rolled at ${last.timestamp || "Just now"}
+            </div>
           </div>
         ` : ""}
-      </div>
 
-      <!-- Conditions Reference -->
-      <div class="dialog-inner-card">
-        <span class="dialog-inner-title">5e Conditions Guide</span>
-        <div style="display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto; margin-top: 6px;">
-          ${CONDITIONS.map(cond => `
-            <div style="background: var(--bg-card-darker); border-left: 3px solid ${cond.color}; border-radius: 6px; padding: 6px 10px;">
-              <strong style="color: ${cond.color}; font-size: 12px;">${cond.name}</strong>
-              <p style="font-size: 11px; color: var(--text-muted); line-height: 1.3; margin-top: 2px;">${cond.desc}</p>
+        <!-- RECENT ROLL HISTORY -->
+        ${(store.diceHistory && store.diceHistory.length > 0) ? `
+          <div class="dialog-inner-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span class="dialog-inner-title">📜 Roll History (${store.diceHistory.length})</span>
+              <button class="btn-header-link crimson" style="font-size: 11px;" onclick="clearDiceHistory()">Clear</button>
             </div>
-          `).join("")}
+            <div style="display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto;">
+              ${store.diceHistory.map(h => `
+                <div class="roll-history-item">
+                  <div>
+                    <strong style="color: #fff;">${h.formula}</strong>
+                    <div style="font-size: 11px; color: var(--text-muted);">${h.calculation || ""}</div>
+                  </div>
+                  <div style="text-align: right;">
+                    <span style="font-size: 18px; font-weight: 900; color: ${h.isNat20 ? '#34d399' : h.isNat1 ? '#ef4444' : 'var(--color-gold-light)'};">
+                      ${h.total}
+                    </span>
+                    <div style="font-size: 10px; color: var(--text-subtle);">${h.timestamp || ""}</div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        ` : ""}
+      ` : subTab === "conditions" ? `
+        <!-- 5E CONDITIONS REFERENCE -->
+        <div class="dialog-inner-card">
+          <span class="dialog-inner-title">5e Official Conditions Reference</span>
+          <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">
+            Quick reference for condition penalties, advantages, and saving throw impacts.
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto;">
+            ${CONDITIONS.map(cond => `
+              <div style="background: var(--bg-card-darker); border-left: 4px solid ${cond.color}; border-radius: 8px; padding: 8px 12px;">
+                <strong style="color: ${cond.color}; font-size: 13px;">${cond.name}</strong>
+                <p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.35; margin-top: 3px;">${cond.desc}</p>
+              </div>
+            `).join("")}
+          </div>
         </div>
-      </div>
+      ` : `
+        <!-- 5E COMBAT RULES REFERENCE -->
+        <div class="dialog-inner-card">
+          <span class="dialog-inner-title">⚔️ 5e Combat Rules Reference</span>
+          <div style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto;">
+            <div style="background: var(--bg-card-darker); border-radius: 8px; padding: 10px 12px;">
+              <strong style="color: var(--color-gold); font-size: 13px;">Standard Actions in Combat</strong>
+              <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin-top: 4px;">
+                &bull; <strong>Attack:</strong> Melee or ranged weapon attack.<br>
+                &bull; <strong>Cast a Spell:</strong> Cast a spell with casting time of 1 action.<br>
+                &bull; <strong>Dash:</strong> Gain extra movement equal to your speed for current turn.<br>
+                &bull; <strong>Disengage:</strong> Movement does not provoke opportunity attacks for remainder of turn.<br>
+                &bull; <strong>Dodge:</strong> Attacks against you have disadvantage if you can see attacker. Advantage on Dex saves.<br>
+                &bull; <strong>Help:</strong> Give an ally advantage on next ability check or attack roll.<br>
+                &bull; <strong>Hide:</strong> Make a Dexterity (Stealth) check in an attempt to hide.<br>
+                &bull; <strong>Ready:</strong> Wait for a particular trigger before acting with reaction.<br>
+                &bull; <strong>Search / Use an Object:</strong> Search area or interact with item.
+              </div>
+            </div>
+
+            <div style="background: var(--bg-card-darker); border-radius: 8px; padding: 10px 12px;">
+              <strong style="color: #60a5fa; font-size: 13px;">🛡️ Cover Rules</strong>
+              <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin-top: 4px;">
+                &bull; <strong>Half Cover (+2 AC & Dex Saves):</strong> Low wall, tree trunk, or creature blocking at least half body.<br>
+                &bull; <strong>Three-Quarters Cover (+5 AC & Dex Saves):</strong> Portcullis, arrow slit, or thick tree trunk blocking 3/4 body.<br>
+                &bull; <strong>Total Cover:</strong> Completely concealed by obstacle. Cannot be targeted directly by attacks or spells.
+              </div>
+            </div>
+
+            <div style="background: var(--bg-card-darker); border-radius: 8px; padding: 10px 12px;">
+              <strong style="color: #f43f5e; font-size: 13px;">💀 Death Saving Throws & Stabilizing</strong>
+              <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin-top: 4px;">
+                &bull; Roll d20 with no modifiers at start of turn when at 0 HP.<br>
+                &bull; <strong>10 or higher:</strong> 1 Success (3 successes = Stabilized).<br>
+                &bull; <strong>9 or lower:</strong> 1 Failure (3 failures = Death).<br>
+                &bull; <strong>Natural 1:</strong> Counts as 2 Failures.<br>
+                &bull; <strong>Natural 20:</strong> Regain 1 HP immediately and wake up.<br>
+                &bull; <strong>Damage at 0 HP:</strong> Causes 1 failure (critical hit causes 2 failures).
+              </div>
+            </div>
+          </div>
+        </div>
+      `}
     </div>
   `;
 }
 
-function rollDieDirect(sides) {
-  const result = rollDie(sides);
-  store.lastRoll = {
-    dice: `1d${sides}`,
-    total: result,
-    isNat20: sides === 20 && result === 20,
-    isNat1: sides === 20 && result === 1
-  };
+// ------------------------------------------
+// DICE ROLLER HELPER FUNCTIONS
+// ------------------------------------------
+
+function switchDiceSubTab(tab) {
+  store.diceSubTab = tab;
   renderApp();
+}
+
+function selectDieType(sides) {
+  store.diceSelectedSides = sides;
+  renderApp();
+}
+
+function adjustDiceCount(delta) {
+  store.diceCount = Math.max(1, Math.min(50, (store.diceCount || 1) + delta));
+  renderApp();
+}
+
+function setDiceCount(val) {
+  store.diceCount = Math.max(1, Math.min(50, val || 1));
+  renderApp();
+}
+
+function adjustDiceModifier(delta) {
+  store.diceModifier = (store.diceModifier || 0) + delta;
+  renderApp();
+}
+
+function setDiceModifier(val) {
+  store.diceModifier = val || 0;
+  renderApp();
+}
+
+function setDiceRollMode(mode) {
+  store.diceRollMode = mode;
+  renderApp();
+}
+
+function adjustTrayDie(sides, delta) {
+  if (!store.diceTray) store.diceTray = { 4:0, 6:0, 8:0, 10:0, 12:0, 20:0, 100:0 };
+  store.diceTray[sides] = Math.max(0, (store.diceTray[sides] || 0) + delta);
+  renderApp();
+}
+
+function clearDiceTray() {
+  store.diceTray = { 4:0, 6:0, 8:0, 10:0, 12:0, 20:0, 100:0 };
+  renderApp();
+}
+
+function clearDiceHistory() {
+  store.diceHistory = [];
+  store.save();
+  renderApp();
+}
+
+function rollConfiguredDice() {
+  const sides = store.diceSelectedSides || 20;
+  const count = store.diceCount || 1;
+  const mod = store.diceModifier || 0;
+  const mode = store.diceRollMode || "NORMAL";
+
+  let rolls = [];
+  let isNat20 = false;
+  let isNat1 = false;
+  let total = 0;
+  let calculation = "";
+
+  if (sides === 20 && count === 1) {
+    if (mode === "ADVANTAGE") {
+      const r1 = rollDie(20);
+      const r2 = rollDie(20);
+      const kept = Math.max(r1, r2);
+      const dropped = Math.min(r1, r2);
+      rolls = [
+        { label: "d20 #1", value: r1, dropped: r1 === dropped && r1 !== r2 },
+        { label: "d20 #2", value: r2, dropped: r2 === dropped }
+      ];
+      isNat20 = kept === 20;
+      isNat1 = kept === 1;
+      total = kept + mod;
+      calculation = `Rolled [${r1}, ${r2}] &bull; Kept ${kept} ${mod !== 0 ? (mod > 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`) : ""} = ${total}`;
+    } else if (mode === "DISADVANTAGE") {
+      const r1 = rollDie(20);
+      const r2 = rollDie(20);
+      const kept = Math.min(r1, r2);
+      const dropped = Math.max(r1, r2);
+      rolls = [
+        { label: "d20 #1", value: r1, dropped: r1 === dropped && r1 !== r2 },
+        { label: "d20 #2", value: r2, dropped: r2 === dropped }
+      ];
+      isNat20 = kept === 20;
+      isNat1 = kept === 1;
+      total = kept + mod;
+      calculation = `Rolled [${r1}, ${r2}] &bull; Kept ${kept} ${mod !== 0 ? (mod > 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`) : ""} = ${total}`;
+    } else {
+      const r = rollDie(20);
+      rolls = [{ label: "d20", value: r, dropped: false }];
+      isNat20 = r === 20;
+      isNat1 = r === 1;
+      total = r + mod;
+      calculation = `Die ${r} ${mod !== 0 ? (mod > 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`) : ""} = ${total}`;
+    }
+  } else {
+    // Multi-dice
+    let sum = 0;
+    for (let i = 0; i < count; i++) {
+      const r = rollDie(sides);
+      rolls.push({ label: `d${sides === 100 ? '%' : sides}`, value: r, dropped: false });
+      sum += r;
+    }
+    total = sum + mod;
+    const valuesList = rolls.map(r => r.value).join(" + ");
+    calculation = `(${valuesList}) ${mod !== 0 ? (mod > 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`) : ""} = ${total}`;
+    if (sides === 20 && count === 1) {
+      isNat20 = rolls[0].value === 20;
+      isNat1 = rolls[0].value === 1;
+    }
+  }
+
+  const modLabel = mod !== 0 ? (mod > 0 ? `+${mod}` : `${mod}`) : "";
+  const formula = `${count}d${sides === 100 ? '%' : sides}${modLabel ? ` ${modLabel}` : ""}${mode === "ADVANTAGE" ? " (Adv)" : mode === "DISADVANTAGE" ? " (Disadv)" : ""}`;
+
+  const rollResult = {
+    id: "roll-" + Date.now(),
+    formula: formula,
+    total: total,
+    rolls: rolls,
+    modifier: mod,
+    sides: sides,
+    count: count,
+    isNat20: isNat20,
+    isNat1: isNat1,
+    calculation: calculation,
+    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  };
+
+  store.lastRoll = rollResult;
+  store.diceHistory = [rollResult, ...(store.diceHistory || [])].slice(0, 20);
+  store.save();
+  renderApp();
+}
+
+function rollDicePool() {
+  const mod = store.diceModifier || 0;
+  const tray = store.diceTray || {};
+  const entries = Object.entries(tray).filter(([_, qty]) => qty > 0);
+
+  if (entries.length === 0) {
+    showToast("Add dice to tray first");
+    return;
+  }
+
+  let rolls = [];
+  let sum = 0;
+  let formulaParts = [];
+
+  entries.forEach(([sidesStr, qty]) => {
+    const sides = parseInt(sidesStr, 10);
+    formulaParts.push(`${qty}d${sides === 100 ? '%' : sides}`);
+    for (let i = 0; i < qty; i++) {
+      const r = rollDie(sides);
+      rolls.push({ label: `d${sides === 100 ? '%' : sides}`, value: r, dropped: false });
+      sum += r;
+    }
+  });
+
+  const total = sum + mod;
+  const modLabel = mod !== 0 ? (mod > 0 ? `+${mod}` : `${mod}`) : "";
+  const formula = `${formulaParts.join(" + ")}${modLabel ? ` ${modLabel}` : ""}`;
+  const valuesList = rolls.map(r => r.value).join(" + ");
+  const calculation = `(${valuesList}) ${mod !== 0 ? (mod > 0 ? `+ ${mod}` : `- ${Math.abs(mod)}`) : ""} = ${total}`;
+
+  const rollResult = {
+    id: "roll-" + Date.now(),
+    formula: formula,
+    total: total,
+    rolls: rolls,
+    modifier: mod,
+    sides: null,
+    count: rolls.length,
+    isNat20: false,
+    isNat1: false,
+    calculation: calculation,
+    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  };
+
+  store.lastRoll = rollResult;
+  store.diceHistory = [rollResult, ...(store.diceHistory || [])].slice(0, 20);
+  store.save();
+  renderApp();
+}
+
+function quickRollPreset(presetName) {
+  let sides = 20;
+  let count = 1;
+  let mod = 0;
+  let mode = "NORMAL";
+  let isSpecialDropLowest = false;
+
+  switch (presetName) {
+    case "d20_check":
+      sides = 20; count = 1; mod = 0; mode = "NORMAL";
+      break;
+    case "d20_adv":
+      sides = 20; count = 1; mod = 0; mode = "ADVANTAGE";
+      break;
+    case "greatsword":
+      sides = 6; count = 2; mod = 3;
+      break;
+    case "longsword":
+      sides = 8; count = 1; mod = 3;
+      break;
+    case "greataxe":
+      sides = 12; count = 1; mod = 3;
+      break;
+    case "fireball":
+      sides = 6; count = 8; mod = 0;
+      break;
+    case "cantrip_d10":
+      sides = 10; count = 1; mod = 0;
+      break;
+    case "stats_4d6":
+      isSpecialDropLowest = true;
+      break;
+  }
+
+  if (isSpecialDropLowest) {
+    const raw = [rollDie(6), rollDie(6), rollDie(6), rollDie(6)];
+    const minVal = Math.min(...raw);
+    let minDropped = false;
+    const rolls = raw.map(v => {
+      if (v === minVal && !minDropped) {
+        minDropped = true;
+        return { label: "d6", value: v, dropped: true };
+      }
+      return { label: "d6", value: v, dropped: false };
+    });
+    const kept = rolls.filter(r => !r.dropped).map(r => r.value);
+    const total = kept.reduce((a, b) => a + b, 0);
+
+    const rollResult = {
+      id: "roll-" + Date.now(),
+      formula: "4d6 Drop Lowest (Ability Score)",
+      total: total,
+      rolls: rolls,
+      modifier: 0,
+      sides: 6,
+      count: 4,
+      isNat20: false,
+      isNat1: false,
+      calculation: `Kept [${kept.join(", ")}] &bull; Dropped [${minVal}] = ${total}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    };
+
+    store.lastRoll = rollResult;
+    store.diceHistory = [rollResult, ...(store.diceHistory || [])].slice(0, 20);
+    store.save();
+    renderApp();
+    return;
+  }
+
+  store.diceSelectedSides = sides;
+  store.diceCount = count;
+  store.diceModifier = mod;
+  store.diceRollMode = mode;
+  rollConfiguredDice();
+}
+
+function rollDieDirect(sides) {
+  selectDieType(sides);
+  rollConfiguredDice();
 }
 
 function spawnMonster(name) {
