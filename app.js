@@ -260,19 +260,6 @@ class DndStore {
     this.diceTray = { 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 20: 0, 100: 0 };
     this.diceSubTab = "roller"; // "roller", "conditions", "rules"
     this.diceInputMode = "standard"; // "standard", "tray"
-
-    // Custom Dice Presets
-    const defaultCustomPresets = [
-      { id: "cp-1", name: "Rogue Sneak Attack", formula: "3d6 + 3", sides: 6, count: 3, mod: 3, mode: "NORMAL" },
-      { id: "cp-2", name: "Paladin Divine Smite", formula: "2d8", sides: 8, count: 2, mod: 0, mode: "NORMAL" },
-      { id: "cp-3", name: "Eldritch Blast", formula: "1d10 + 4", sides: 10, count: 1, mod: 4, mode: "NORMAL" },
-      { id: "cp-4", name: "Greatsword + Weapon Mod", formula: "2d6 + 4", sides: 6, count: 2, mod: 4, mode: "NORMAL" }
-    ];
-    this.customDicePresets = this.load("dnd_custom_presets_v2", defaultCustomPresets);
-
-    // Bestiary batch selection & search
-    this.bestiarySearchQuery = "";
-    this.bestiarySelected = {}; // { [monsterName]: quantity }
   }
 
   load(key, fallback) {
@@ -289,7 +276,6 @@ class DndStore {
       localStorage.setItem("dnd_party_v2", JSON.stringify(this.party));
       localStorage.setItem("dnd_encounter_v2", JSON.stringify(this.encounter));
       localStorage.setItem("dnd_dice_hist_v2", JSON.stringify(this.diceHistory));
-      localStorage.setItem("dnd_custom_presets_v2", JSON.stringify(this.customDicePresets));
     } catch (e) {}
   }
 
@@ -542,48 +528,14 @@ function applyDamage(combatantId, amount) {
       }
     }
 
-    const beforeHp = c.currentHp;
     const afterHp = Math.max(0, c.currentHp - damageRemaining);
     finalHp = afterHp;
     let conditions = [...(c.conditions || [])];
-    let succ = c.deathSavesSuccess || 0;
-    let fail = c.deathSavesFailure || 0;
-    let isDead = c.isDead;
-    let isStabilized = c.isStabilized;
-
-    if (c.isPlayer) {
-      if (beforeHp > 0 && afterHp === 0) {
-        if (!conditions.includes("unconscious")) conditions.push("unconscious");
-        succ = 0;
-        fail = 0;
-        isStabilized = false;
-        store.logEvent(`⚠️ ${c.name} has fallen to 0 HP and is Unconscious! Death saving throws required.`, "damage");
-      } else if (beforeHp === 0 && afterHp === 0) {
-        fail = Math.min(3, fail + 1);
-        isStabilized = false;
-        if (fail >= 3) {
-          isDead = true;
-          if (!conditions.includes("dead")) conditions.push("dead");
-          store.logEvent(`💀 ${c.name} took damage at 0 HP, suffering 3rd death save failure and died!`, "damage");
-        } else {
-          store.logEvent(`💔 ${c.name} took damage at 0 HP, suffering a failed death save (${fail}/3)!`, "damage");
-        }
-      }
-    } else {
-      if (afterHp === 0) {
-        isDead = true;
-        if (!conditions.includes("dead")) conditions.push("dead");
-      }
-    }
 
     return {
       ...c,
       currentHp: afterHp,
       tempHp: currentTemp,
-      deathSavesSuccess: succ,
-      deathSavesFailure: fail,
-      isStabilized: isStabilized,
-      isDead: isDead,
       conditions: conditions
     };
   });
@@ -603,270 +555,15 @@ function applyHealing(combatantId, amount) {
     targetName = c.name;
     const healed = Math.min(c.maxHp, c.currentHp + amount);
     finalHp = healed;
-    let conditions = [...(c.conditions || [])];
-    let isDead = c.isDead;
-    let isStabilized = c.isStabilized;
-    let succ = c.deathSavesSuccess || 0;
-    let fail = c.deathSavesFailure || 0;
-
-    if (c.isPlayer && c.currentHp === 0 && healed > 0) {
-      conditions = conditions.filter(cn => cn !== "unconscious" && cn !== "dead");
-      succ = 0;
-      fail = 0;
-      isStabilized = false;
-      isDead = false;
-    }
-
     return {
       ...c,
-      currentHp: healed,
-      isDead: isDead,
-      isStabilized: isStabilized,
-      deathSavesSuccess: succ,
-      deathSavesFailure: fail,
-      conditions: conditions
+      currentHp: healed
     };
   });
 
   store.logEvent(`✨ ${targetName} healed ${amount} HP! (HP: ${finalHp})`, "heal");
   store.save();
   renderApp();
-}
-
-// ==========================================
-// DEATH SAVES SYSTEM
-// ==========================================
-
-function recordDeathSave(combatantId, isSuccess) {
-  const c = store.encounter.combatants.find(x => x.id === combatantId);
-  if (!c || !c.isPlayer) return;
-
-  let succ = c.deathSavesSuccess || 0;
-  let fail = c.deathSavesFailure || 0;
-
-  if (isSuccess) {
-    succ = Math.min(3, succ + 1);
-  } else {
-    fail = Math.min(3, fail + 1);
-  }
-
-  c.deathSavesSuccess = succ;
-  c.deathSavesFailure = fail;
-
-  let conditions = new Set(c.conditions || []);
-
-  if (succ >= 3) {
-    c.isStabilized = true;
-    conditions.add("unconscious");
-    store.logEvent(`🌟 ${c.name} has STABILIZED at 0 HP with the Unconscious condition!`, "heal");
-    showToast(`🌟 ${c.name} has stabilized!`);
-  }
-
-  if (fail >= 3) {
-    c.isDead = true;
-    conditions.add("dead");
-    store.logEvent(`💀 ${c.name} has DIED from 3 failed death saving throws!`, "damage");
-    showToast(`💀 ${c.name} has died!`);
-  }
-
-  c.conditions = Array.from(conditions);
-
-  if (isSuccess && succ < 3) {
-    store.logEvent(`💚 ${c.name} passed a Death Save (${succ}/3)`, "info");
-    showToast(`Passed death save (${succ}/3)`);
-  } else if (!isSuccess && fail < 3) {
-    store.logEvent(`💔 ${c.name} FAILED a Death Save (${fail}/3)`, "damage");
-    showToast(`Failed death save (${fail}/3)`);
-  }
-
-  store.save();
-  renderApp();
-}
-
-function rollDeathSave(combatantId) {
-  const c = store.encounter.combatants.find(x => x.id === combatantId);
-  if (!c || !c.isPlayer) return;
-
-  const roll = rollD20();
-  store.lastRoll = {
-    formula: `Death Save (d20) for ${c.name}`,
-    total: roll,
-    rolls: [{ label: "d20", value: roll, dropped: false }],
-    modifier: 0,
-    sides: 20,
-    count: 1,
-    isNat20: roll === 20,
-    isNat1: roll === 1,
-    calculation: roll === 20 ? "Natural 20! Regains 1 HP immediately & awakens!" : roll === 1 ? "Natural 1! Suffers 2 failed death saves!" : roll >= 10 ? `Roll ${roll} >= 10: Success (+1)` : `Roll ${roll} < 10: Failure (+1)`,
-    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  };
-
-  if (roll === 20) {
-    // Natural 20: Regain 1 HP immediately!
-    c.currentHp = 1;
-    c.isDead = false;
-    c.isStabilized = false;
-    c.deathSavesSuccess = 0;
-    c.deathSavesFailure = 0;
-    c.conditions = (c.conditions || []).filter(cn => cn !== "dead" && cn !== "unconscious");
-    store.logEvent(`🌟 NATURAL 20! ${c.name} miraculously wakes up with 1 HP!`, "heal");
-    showToast(`🌟 Natural 20! ${c.name} regains 1 HP!`);
-  } else if (roll === 1) {
-    // Natural 1: 2 failures!
-    const newFail = Math.min(3, (c.deathSavesFailure || 0) + 2);
-    c.deathSavesFailure = newFail;
-    if (newFail >= 3) {
-      c.isDead = true;
-      if (!c.conditions.includes("dead")) c.conditions.push("dead");
-      store.logEvent(`💀 CRITICAL FUMBLE (Nat 1)! ${c.name} suffers 2 failed death saves and has died!`, "damage");
-      showToast(`💀 Natural 1! ${c.name} has died!`);
-    } else {
-      store.logEvent(`💀 Natural 1! ${c.name} suffers 2 failed death saves (${newFail}/3)!`, "damage");
-      showToast(`Natural 1! +2 failed death saves!`);
-    }
-  } else if (roll >= 10) {
-    recordDeathSave(combatantId, true);
-    return;
-  } else {
-    recordDeathSave(combatantId, false);
-    return;
-  }
-
-  store.save();
-  renderApp();
-}
-
-function resetDeathSaves(combatantId) {
-  const c = store.encounter.combatants.find(x => x.id === combatantId);
-  if (c) {
-    c.deathSavesSuccess = 0;
-    c.deathSavesFailure = 0;
-    c.isStabilized = false;
-    store.logEvent(`Reset death saves for ${c.name}`, "info");
-    store.save();
-    renderApp();
-    showToast(`Reset death saves for ${c.name}`);
-  }
-}
-
-function reviveCombatant(combatantId) {
-  const c = store.encounter.combatants.find(x => x.id === combatantId);
-  if (c) {
-    c.currentHp = 1;
-    c.isDead = false;
-    c.isStabilized = false;
-    c.deathSavesSuccess = 0;
-    c.deathSavesFailure = 0;
-    c.conditions = (c.conditions || []).filter(cn => cn !== "dead" && cn !== "unconscious");
-    store.logEvent(`✨ ${c.name} has been revived with 1 HP!`, "heal");
-    store.save();
-    renderApp();
-    showToast(`✨ ${c.name} revived with 1 HP!`);
-  }
-}
-
-function renderDeathSavesCard(c) {
-  if (!c || !c.isPlayer || (c.currentHp > 0 && !c.isDead && !c.isStabilized)) return "";
-  const succ = c.deathSavesSuccess || 0;
-  const fail = c.deathSavesFailure || 0;
-  const isDead = c.isDead || fail >= 3;
-  const isStable = c.isStabilized || succ >= 3;
-
-  return `
-    <div class="death-saves-card">
-      <div class="death-saves-header">
-        <span class="death-saves-title">
-          <span>${isDead ? "💀" : isStable ? "🌟" : "⏳"}</span>
-          <span>${isDead ? "DECEASED (3 FAILED SAVES)" : isStable ? "STABILIZED (UNCONSCIOUS AT 0 HP)" : "DEATH SAVING THROWS"}</span>
-        </span>
-        <span style="font-size: 11px; font-weight: 800; color: ${isDead ? '#ef4444' : isStable ? '#10b981' : '#f59e0b'};">
-          ${isDead ? "DEAD 💀" : isStable ? "STABLE 🟢" : "DYING (0 HP)"}
-        </span>
-      </div>
-
-      <div class="death-saves-rows">
-        <!-- Successes -->
-        <div class="death-save-row">
-          <div class="death-save-label success">
-            <span>🟢</span>
-            <span>SUCCESSES (${succ}/3)</span>
-          </div>
-          <div class="death-save-bubbles">
-            ${[1, 2, 3].map(i => `
-              <button class="death-save-bubble ${succ >= i ? 'filled-success' : ''}" 
-                      onclick="recordDeathSave('${c.id}', true)" 
-                      title="Mark Success ${i}"></button>
-            `).join("")}
-          </div>
-        </div>
-
-        <!-- Failures -->
-        <div class="death-save-row">
-          <div class="death-save-label failure">
-            <span>🔴</span>
-            <span>FAILURES (${fail}/3)</span>
-          </div>
-          <div class="death-save-bubbles">
-            ${[1, 2, 3].map(i => `
-              <button class="death-save-bubble ${fail >= i ? 'filled-failure' : ''}" 
-                      onclick="recordDeathSave('${c.id}', false)" 
-                      title="Mark Failure ${i}"></button>
-            `).join("")}
-          </div>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="death-saves-actions">
-        ${!isDead && !isStable ? `
-          <button class="btn-death-action roll" onclick="rollDeathSave('${c.id}')">
-            <span>🎲</span> Roll Save (d20)
-          </button>
-          <button class="btn-death-action pass" onclick="recordDeathSave('${c.id}', true)">
-            +1 Pass
-          </button>
-          <button class="btn-death-action fail" onclick="recordDeathSave('${c.id}', false)">
-            +1 Fail
-          </button>
-        ` : ""}
-        <button class="btn-death-action" style="background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border-card);" onclick="resetDeathSaves('${c.id}')">
-          🔄 Reset
-        </button>
-        ${(isDead || isStable || c.currentHp === 0) ? `
-          <button class="btn-death-action revive" onclick="reviveCombatant('${c.id}')">
-            ✨ Revive with 1 HP
-          </button>
-        ` : ""}
-      </div>
-    </div>
-  `;
-}
-
-function renderDeathSavesMini(c) {
-  if (!c || !c.isPlayer || (c.currentHp > 0 && !c.isDead && !c.isStabilized)) return "";
-  const succ = c.deathSavesSuccess || 0;
-  const fail = c.deathSavesFailure || 0;
-  const isDead = c.isDead || fail >= 3;
-  const isStable = c.isStabilized || succ >= 3;
-
-  return `
-    <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(30,20,35,0.9); border:1px solid ${isDead ? '#ef4444' : isStable ? '#10b981' : '#dc2626'}; border-radius:8px; padding:6px 10px; margin-top:8px;">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:12px; font-weight:800; color:${isDead ? '#ef4444' : isStable ? '#10b981' : '#fca5a5'};">
-          ${isDead ? '💀 Dead' : isStable ? '🌟 Stable' : '⏳ Dying'}
-        </span>
-        <span style="font-size:11px; color:#34d399; font-weight:700;">🟢 ${succ}/3</span>
-        <span style="font-size:11px; color:#f87171; font-weight:700;">🔴 ${fail}/3</span>
-      </div>
-      <div style="display:flex; gap:6px;">
-        ${!isDead && !isStable ? `
-          <button class="btn-prev-turn" style="height:28px; padding:0 10px; font-size:11px; border-radius:6px; background:rgba(245,158,11,0.2); border-color:var(--color-gold); color:var(--color-gold-light);" onclick="rollDeathSave('${c.id}')">🎲 Roll Save</button>
-        ` : `
-          <button class="btn-prev-turn" style="height:28px; padding:0 10px; font-size:11px; border-radius:6px; background:rgba(16,185,129,0.2); border-color:#10b981; color:#34d399;" onclick="reviveCombatant('${c.id}')">✨ Revive</button>
-        `}
-      </div>
-    </div>
-  `;
 }
 
 // ==========================================
@@ -896,11 +593,6 @@ function renderApp() {
   document.querySelectorAll(".nav-tab-item").forEach(item => {
     item.classList.toggle("active", item.dataset.tab === store.currentTab);
   });
-
-  // Update Desktop Top Nav active state
-  document.querySelectorAll(".desktop-tab-btn").forEach(item => {
-    item.classList.toggle("active", item.dataset.tab === store.currentTab);
-  });
 }
 
 // ------------------------------------------
@@ -916,337 +608,323 @@ function renderCombatScreen() {
   const enemyCount = combatants.filter(c => !c.isPlayer).length;
 
   return `
-    <div class="combat-screen-grid">
-      <!-- LEFT COLUMN: Arena Header & Active Spotlight / Prep Banner (Sticky on Desktop) -->
-      <div class="combat-left-col">
-        <!-- Top Header Card (Screenshot: Round 1, 2 PCs • 2 Foes, Dice, Clock, Add) -->
-        <div class="arena-header-card">
-          <div class="arena-header-top-row">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <div class="round-indicator-pill ${enc.isCombatStarted ? "active" : "prep"}">
-                <span>⚔️</span>
-                <span>${enc.isCombatStarted ? `Round ${enc.round}` : "Preparation"}</span>
-              </div>
-              <span class="arena-counts-text">${playerCount} PCs • ${enemyCount} Foes</span>
-            </div>
-
-            <div class="arena-top-actions">
-              <button class="icon-btn-header gold" onclick="store.currentTab = 'dice'; renderApp();" title="Dice Roller">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
-              </button>
-              <button class="icon-btn-header" onclick="openLogModal()" title="Combat Log">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-              </button>
-              <button class="icon-btn-header crimson" onclick="openAddEnemyModal()" title="Add Enemy">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-              </button>
-            </div>
+    <!-- Top Header Card (Screenshot: Round 1, 2 PCs • 2 Foes, Dice, Clock, Add) -->
+    <div class="arena-header-card">
+      <div class="arena-header-top-row">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="round-indicator-pill ${enc.isCombatStarted ? "active" : "prep"}">
+            <span>⚔️</span>
+            <span>${enc.isCombatStarted ? `Round ${enc.round}` : "Preparation"}</span>
           </div>
-
-          ${enc.isCombatStarted ? `
-            <!-- Turn Controls Row (Prev, Next Turn, Stop) -->
-            <div class="turn-controls-row">
-              <button class="btn-prev-turn" onclick="prevTurn()">
-                <span>|◀</span>
-                <span>Prev</span>
-              </button>
-              <button class="btn-next-turn" onclick="nextTurn()">
-                <span>Next Turn</span>
-                <span>▶|</span>
-              </button>
-              <button class="btn-stop-combat" onclick="openEndCombatModal()" title="End Combat">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
-              </button>
-            </div>
-          ` : `
-            <!-- Preparation Mode Controls -->
-            <div class="prep-controls-col">
-              ${playerCount > 0 ? `
-                <button class="btn-prep-action outline-gold" onclick="openPartyInitiativesModal()">
-                  <span>🎲</span>
-                  <span>Input Player Initiatives</span>
-                </button>
-              ` : ""}
-              <button class="btn-prep-action solid-gold" onclick="startCombat(true)" ${combatants.length === 0 ? "disabled" : ""}>
-                <span>⚔️</span>
-                <span>${enemyCount > 0 ? "Start Combat (Auto-Rolls Monsters)" : "Start Combat"}</span>
-              </button>
-            </div>
-          `}
+          <span class="arena-counts-text">${playerCount} PCs • ${enemyCount} Foes</span>
         </div>
 
-        <!-- CURRENT TURN SPOTLIGHT CARD OR PREPARATION BANNER -->
-        ${(enc.isCombatStarted && active) ? `
-          <div class="current-turn-card">
-            <!-- Top row: CURRENT TURN, Player/Monster, On Deck -->
-            <div class="current-turn-top-row">
-              <div class="current-turn-badges">
-                <span class="badge-current-turn">CURRENT TURN</span>
-                <span class="badge-player-indicator ${active.isPlayer ? "" : "monster"}">
-                  ${active.isPlayer ? "🛡️ Player" : "👹 Monster"}
-                </span>
-              </div>
-              ${onDeck ? `<span class="on-deck-text">On Deck: ${onDeck.name}</span>` : ""}
+        <div class="arena-top-actions">
+          <button class="icon-btn-header gold" onclick="store.currentTab = 'dice'; renderApp();" title="Dice Roller">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
+          </button>
+          <button class="icon-btn-header" onclick="openLogModal()" title="Combat Log">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+          </button>
+          <button class="icon-btn-header crimson" onclick="openAddEnemyModal()" title="Add Enemy">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      ${enc.isCombatStarted ? `
+        <!-- Turn Controls Row (Prev, Next Turn, Stop) -->
+        <div class="turn-controls-row">
+          <button class="btn-prev-turn" onclick="prevTurn()">
+            <span>|◀</span>
+            <span>Prev</span>
+          </button>
+          <button class="btn-next-turn" onclick="nextTurn()">
+            <span>Next Turn</span>
+            <span>▶|</span>
+          </button>
+          <button class="btn-stop-combat" onclick="openEndCombatModal()" title="End Combat">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
+          </button>
+        </div>
+      ` : `
+        <!-- Preparation Mode Controls -->
+        <div class="prep-controls-col">
+          ${playerCount > 0 ? `
+            <button class="btn-prep-action outline-gold" onclick="openPartyInitiativesModal()">
+              <span>🎲</span>
+              <span>Input Player Initiatives</span>
+            </button>
+          ` : ""}
+          <button class="btn-prep-action solid-gold" onclick="startCombat(true)" ${combatants.length === 0 ? "disabled" : ""}>
+            <span>⚔️</span>
+            <span>${enemyCount > 0 ? "Start Combat (Auto-Rolls Monsters)" : "Start Combat"}</span>
+          </button>
+        </div>
+      `}
+    </div>
+
+    <!-- CURRENT TURN SPOTLIGHT CARD OR PREPARATION BANNER -->
+    ${(enc.isCombatStarted && active) ? `
+      <div class="current-turn-card">
+        <!-- Top row: CURRENT TURN, Player/Monster, On Deck -->
+        <div class="current-turn-top-row">
+          <div class="current-turn-badges">
+            <span class="badge-current-turn">CURRENT TURN</span>
+            <span class="badge-player-indicator ${active.isPlayer ? "" : "monster"}">
+              ${active.isPlayer ? "🛡️ Player" : "👹 Monster"}
+            </span>
+          </div>
+          ${onDeck ? `<span class="on-deck-text">On Deck: ${onDeck.name}</span>` : ""}
+        </div>
+
+        <!-- Name & Squircles for AC, INIT, SPD -->
+        <div class="turn-name-and-stats">
+          <div class="turn-name-group">
+            <span class="turn-name-title">${active.name}</span>
+            <span class="turn-name-class">${active.characterClassOrType}</span>
+          </div>
+
+          <div class="turn-stats-squircles">
+            <div class="stat-squircle" onclick="openAcModal('${active.id}')" title="Edit AC">
+              <span class="stat-squircle-label">AC</span>
+              <span class="stat-squircle-val">${active.armorClass}</span>
             </div>
+            <div class="stat-squircle" onclick="openInitModal('${active.id}')" title="Edit Initiative">
+              <span class="stat-squircle-label">INIT</span>
+              <span class="stat-squircle-val">${active.initiativeRoll}</span>
+            </div>
+            <div class="stat-squircle" onclick="openSpeedModal('${active.id}')" title="Edit Speed">
+              <span class="stat-squircle-label">SPD</span>
+              <span class="stat-squircle-val">${active.speed}ft</span>
+            </div>
+          </div>
+        </div>
 
-            <!-- Name & Squircles for AC, INIT, SPD -->
-            <div class="turn-name-and-stats">
-              <div class="turn-name-group">
-                <span class="turn-name-title">${active.name}</span>
-                <span class="turn-name-class">${active.characterClassOrType}</span>
+        <!-- HP Row & Quick Chips (-5, -1, +1, +5) -->
+        <div class="turn-hp-row">
+          <div class="hp-main-label" onclick="openDamageHealModal('${active.id}')">
+            <span>HP:</span>
+            <span class="hp-current-num ${active.currentHp <= 3 ? "red" : active.currentHp <= 6 ? "low" : ""}">${active.currentHp}</span>
+            <span>/ ${active.maxHp}</span>
+            ${active.tempHp > 0 ? `
+              <span class="temp-hp-pill-tag">🛡️ +${active.tempHp} Temp HP</span>
+            ` : ""}
+          </div>
+
+          <div class="quick-hp-chips-group">
+            <button class="chip-quick-hp dmg" onclick="applyDamage('${active.id}', 5)">-5</button>
+            <button class="chip-quick-hp dmg" onclick="applyDamage('${active.id}', 1)">-1</button>
+            <button class="chip-quick-hp heal" onclick="applyHealing('${active.id}', 1)">+1</button>
+            <button class="chip-quick-hp heal" onclick="applyHealing('${active.id}', 5)">+5</button>
+          </div>
+        </div>
+
+        <!-- HP Bar with Temp HP overlay -->
+        <div class="unified-hp-bar" onclick="openDamageHealModal('${active.id}')">
+          <div class="unified-hp-fill ${active.currentHp <= 3 ? "red" : active.currentHp <= 6 ? "amber" : ""}" style="width: ${Math.min(100, Math.max(0, (active.currentHp / (active.maxHp || 1)) * 100))}%;"></div>
+          ${active.tempHp > 0 ? `
+            <div class="unified-hp-temp" style="width: ${Math.min(100, (active.tempHp / (active.maxHp || 1)) * 100)}%;"></div>
+          ` : ""}
+        </div>
+
+        <!-- 3 Big Action Buttons (💥 Damage, 💚 Heal, ✨ Condition) -->
+        <div class="turn-action-buttons-row">
+          <button class="btn-turn-action damage" onclick="openDamageHealModal('${active.id}')">
+            <span>💥 Damage</span>
+          </button>
+          <button class="btn-turn-action heal" onclick="openDamageHealModal('${active.id}')">
+            <span>💚 Heal</span>
+          </button>
+          <button class="btn-turn-action condition" onclick="openConditionsModal('${active.id}')">
+            <span>✨ Condition</span>
+          </button>
+        </div>
+
+        <!-- ABILITIES & ACTIONS SECTION -->
+        <div class="abilities-section-card">
+          <div class="abilities-section-header">
+            <span>⚡</span>
+            <span>ABILITIES & ACTIONS</span>
+          </div>
+
+          <!-- Dynamic character ability rows -->
+          ${(active.abilities && active.abilities.length > 0) ? active.abilities.map(ab => `
+            <div class="ability-item-row">
+              <div class="ability-title-line">
+                <span class="ability-type-badge ${ab.type.toLowerCase().includes('bonus') ? 'bonus' : ab.type.toLowerCase().includes('feat') ? 'feat' : ab.type.toLowerCase().includes('reaction') ? 'reaction' : 'action'}">
+                  ${ab.type.toUpperCase()}
+                </span>
+                <span class="ability-name-bold">⚡ ${ab.name}</span>
+              </div>
+              <span class="ability-desc-text">${ab.description}</span>
+            </div>
+          `).join("") : (active.notes ? `
+            <div class="ability-item-row">
+              <span class="ability-desc-text">📜 ${active.notes}</span>
+            </div>
+          ` : `
+            <div class="ability-item-row">
+              <span class="ability-desc-text" style="color: var(--text-subtle);">No custom abilities specified for this character.</span>
+            </div>
+          `)}
+
+          <!-- 4 Equal Action Economy Boxes -->
+          <div class="action-economy-grid">
+            <div class="action-economy-box">
+              <div class="action-economy-title" style="color: var(--color-gold);">
+                <span>⚔️</span> Action
+              </div>
+              <span class="action-economy-desc">Attack, Cast, Dash, Disengage, Dodge, Help, Hide</span>
+            </div>
+            <div class="action-economy-box">
+              <div class="action-economy-title" style="color: #34d399;">
+                <span>⚡</span> Bonus
+              </div>
+              <span class="action-economy-desc">Bonus Spells, Offhand, Class feats</span>
+            </div>
+            <div class="action-economy-box">
+              <div class="action-economy-title" style="color: #60a5fa;">
+                <span>🛡️</span> Reaction
+              </div>
+              <span class="action-economy-desc">Opportunity Attack, Shield, Counter</span>
+            </div>
+            <div class="action-economy-box">
+              <div class="action-economy-title" style="color: #f1f5f9;">
+                <span>👟</span> Move
+              </div>
+              <span class="action-economy-desc">${active ? active.speed : 30}ft Speed (Walk, climb, swim)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    ` : `
+      <div class="prep-status-banner">
+        <span style="font-size: 20px;">🛡️</span>
+        <div>
+          <strong style="color: var(--color-gold-light); display: block; margin-bottom: 2px;">Encounter in Preparation</strong>
+          <span>Adjust combatant stats, initiatives, or HP below. Press <strong>Start Combat</strong> above when ready to begin Round 1.</span>
+        </div>
+      </div>
+    `}
+
+    ${combatants.length === 0 ? `
+      <div class="dialog-inner-card" style="margin: 12px; text-align: center; padding: 24px 16px; align-items: center;">
+        <span style="font-size: 32px;">⚔️</span>
+        <span style="font-size: 16px; font-weight: 800; color: var(--color-gold); margin-top: 6px;">No Combatants in Arena</span>
+        <p style="font-size: 12px; color: var(--text-muted); max-width: 320px; margin: 6px 0 16px 0;">Add your party members or spawn monsters from the SRD bestiary to assemble the encounter.</p>
+        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 280px;">
+          <button class="btn-prep-action solid-gold" onclick="addAllPartyToEncounter()">Add Entire Party</button>
+          <button class="btn-prep-action outline-gold" onclick="store.currentTab = 'bestiary'; renderApp();">Browse Bestiary</button>
+          <button class="btn-prev-turn" style="height: 42px; width: 100%; border-radius: 12px;" onclick="openAddEnemyModal()">+ Add Custom Monster</button>
+        </div>
+      </div>
+    ` : ""}
+
+    <!-- INITIATIVE ORDER SECTION -->
+    <div class="initiative-section-header">
+      <span class="initiative-title">INITIATIVE ORDER (${combatants.length})</span>
+      <div class="initiative-header-actions">
+        <button class="btn-header-link gold" onclick="openPartyInitiativesModal()">
+          <span>🎲 Party Inits</span>
+        </button>
+        <button class="btn-header-link crimson" onclick="rollMonstersInitiative()">
+          <span>🔄 Roll Monsters</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Combatant List Cards -->
+    <div class="combatants-list-container">
+      ${combatants.map((c, index) => {
+        const isActiveCard = enc.isCombatStarted && index === enc.currentTurnIndex;
+        const isOnDeckCard = enc.isCombatStarted && combatants.length > 1 && index === ((enc.currentTurnIndex + 1) % combatants.length);
+        const hpPercent = Math.min(100, Math.max(0, (c.currentHp / (c.maxHp || 1)) * 100));
+
+        return `
+          <div class="combatant-list-card ${isActiveCard ? "active-turn" : ""} ${c.isDead ? "is-dead" : ""}" id="c-card-${c.id}">
+            <!-- Top Row: Circular Init, Name, Sub, AC Shield, Boot Speed, Remove X -->
+            <div class="combatant-card-top-row">
+              <div class="circular-init-badge" onclick="openInitModal('${c.id}')" title="Edit Initiative">
+                <span class="circular-init-num">${c.initiativeRoll}</span>
+                <span class="circular-init-label">INIT</span>
               </div>
 
-              <div class="turn-stats-squircles">
-                <div class="stat-squircle" onclick="openAcModal('${active.id}')" title="Edit AC">
-                  <span class="stat-squircle-label">AC</span>
-                  <span class="stat-squircle-val">${active.armorClass}</span>
+              <div class="combatant-info-group">
+                <div class="combatant-name-and-badges">
+                  <span class="combatant-list-name">${c.name}</span>
+                  ${isOnDeckCard ? `<span class="badge-on-deck">ON DECK</span>` : ""}
                 </div>
-                <div class="stat-squircle" onclick="openInitModal('${active.id}')" title="Edit Initiative">
-                  <span class="stat-squircle-label">INIT</span>
-                  <span class="stat-squircle-val">${active.initiativeRoll}</span>
+                <span class="combatant-list-sub">${c.characterClassOrType}</span>
+              </div>
+
+              <div class="combatant-right-pills">
+                <div class="pill-shield-ac" onclick="openAcModal('${c.id}')" title="Edit AC">
+                  <span>🛡️</span>
+                  <span>${c.armorClass}</span>
                 </div>
-                <div class="stat-squircle" onclick="openSpeedModal('${active.id}')" title="Edit Speed">
-                  <span class="stat-squircle-label">SPD</span>
-                  <span class="stat-squircle-val">${active.speed}ft</span>
+                <div class="pill-boot-speed" onclick="openSpeedModal('${c.id}')" title="Edit Speed">
+                  <span>🥾</span>
+                  <span>${c.speed}ft</span>
                 </div>
+                <button class="btn-card-close" onclick="removeCombatant('${c.id}')" title="Remove">✕</button>
               </div>
             </div>
 
             <!-- HP Row & Quick Chips (-5, -1, +1, +5) -->
-            <div class="turn-hp-row">
-              <div class="hp-main-label" onclick="openDamageHealModal('${active.id}')">
+            <div class="turn-hp-row" style="margin-bottom: 4px;">
+              <div class="hp-main-label" onclick="openDamageHealModal('${c.id}')">
                 <span>HP:</span>
-                <span class="hp-current-num ${active.currentHp <= 3 ? "red" : active.currentHp <= 6 ? "low" : ""}">${active.currentHp}</span>
-                <span>/ ${active.maxHp}</span>
-                ${active.tempHp > 0 ? `
-                  <span class="temp-hp-pill-tag">🛡️ +${active.tempHp} Temp HP</span>
-                ` : ""}
+                <span class="hp-current-num ${c.currentHp <= 3 ? "red" : c.currentHp <= 6 ? "low" : ""}">${c.currentHp}</span>
+                <span>/ ${c.maxHp}</span>
+                ${c.tempHp > 0 ? `<span class="temp-hp-pill-tag">🛡️ +${c.tempHp} Temp</span>` : ""}
               </div>
 
               <div class="quick-hp-chips-group">
-                <button class="chip-quick-hp dmg" onclick="applyDamage('${active.id}', 5)">-5</button>
-                <button class="chip-quick-hp dmg" onclick="applyDamage('${active.id}', 1)">-1</button>
-                <button class="chip-quick-hp heal" onclick="applyHealing('${active.id}', 1)">+1</button>
-                <button class="chip-quick-hp heal" onclick="applyHealing('${active.id}', 5)">+5</button>
+                <button class="chip-quick-hp dmg" onclick="applyDamage('${c.id}', 5)">-5</button>
+                <button class="chip-quick-hp dmg" onclick="applyDamage('${c.id}', 1)">-1</button>
+                <button class="chip-quick-hp heal" onclick="applyHealing('${c.id}', 1)">+1</button>
+                <button class="chip-quick-hp heal" onclick="applyHealing('${c.id}', 5)">+5</button>
               </div>
             </div>
 
-            <!-- HP Bar with Temp HP overlay -->
-            <div class="unified-hp-bar" onclick="openDamageHealModal('${active.id}')">
-              <div class="unified-hp-fill ${active.currentHp <= 3 ? "red" : active.currentHp <= 6 ? "amber" : ""}" style="width: ${Math.min(100, Math.max(0, (active.currentHp / (active.maxHp || 1)) * 100))}%;"></div>
-              ${active.tempHp > 0 ? `
-                <div class="unified-hp-temp" style="width: ${Math.min(100, (active.tempHp / (active.maxHp || 1)) * 100)}%;"></div>
+            <!-- HP Bar -->
+            <div class="unified-hp-bar" style="margin-bottom: 6px;" onclick="openDamageHealModal('${c.id}')">
+              <div class="unified-hp-fill ${c.currentHp <= 3 ? "red" : c.currentHp <= 6 ? "amber" : ""}" style="width: ${hpPercent}%;"></div>
+              ${c.tempHp > 0 ? `
+                <div class="unified-hp-temp" style="width: ${Math.min(100, (c.tempHp / (c.maxHp || 1)) * 100)}%;"></div>
               ` : ""}
             </div>
 
-            <!-- DEATH SAVES CARD (If HP is 0 or Unconscious/Dead/Stable) -->
-            ${renderDeathSavesCard(active)}
-
-            <!-- 3 Big Action Buttons (💥 Damage, 💚 Heal, ✨ Condition) -->
-            <div class="turn-action-buttons-row">
-              <button class="btn-turn-action damage" onclick="openDamageHealModal('${active.id}')">
-                <span>💥 Damage</span>
-              </button>
-              <button class="btn-turn-action heal" onclick="openDamageHealModal('${active.id}')">
-                <span>💚 Heal</span>
-              </button>
-              <button class="btn-turn-action condition" onclick="openConditionsModal('${active.id}')">
-                <span>✨ Condition</span>
-              </button>
+            <!-- Condition Badges & Chips -->
+            <div class="combatant-chips-row">
+              ${c.coverType && c.coverType !== "NONE" ? `
+                <span class="pill-cover-badge" onclick="openAcModal('${c.id}')">
+                  ${c.coverType === "HALF" ? "Half Cover" : c.coverType === "THREE_QUARTERS" ? "3/4 Cover" : "Total Cover"}
+                </span>
+              ` : ""}
+              ${c.isDifficultTerrain ? `
+                <span class="pill-terrain-badge" onclick="openSpeedModal('${c.id}')">
+                  Difficult Terrain
+                </span>
+              ` : ""}
+              ${(c.conditions || []).filter(cn => cn !== "half_cover" && cn !== "three_quarters_cover" && cn !== "total_cover" && cn !== "difficult_terrain").map(cn => {
+                const condObj = CONDITIONS.find(x => x.id === cn);
+                return condObj ? `<span class="pill-cover-badge" style="border-color:${condObj.color};" onclick="openConditionsModal('${c.id}')">${condObj.name}</span>` : "";
+              }).join("")}
+              <button class="btn-add-condition-chip" onclick="openConditionsModal('${c.id}')">+ Condition</button>
             </div>
 
-            <!-- ABILITIES & ACTIONS SECTION -->
-            <div class="abilities-section-card">
-              <div class="abilities-section-header">
-                <span>⚡</span>
-                <span>ABILITIES & ACTIONS</span>
+            <!-- Scroll Note Snippet (if available) -->
+            ${c.notes ? `
+              <div class="scroll-note-snippet">
+                <span>📜</span>
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.notes}</span>
               </div>
-
-              <!-- Dynamic character ability rows -->
-              ${(active.abilities && active.abilities.length > 0) ? active.abilities.map(ab => `
-                <div class="ability-item-row">
-                  <div class="ability-title-line">
-                    <span class="ability-type-badge ${ab.type.toLowerCase().includes('bonus') ? 'bonus' : ab.type.toLowerCase().includes('feat') ? 'feat' : ab.type.toLowerCase().includes('reaction') ? 'reaction' : 'action'}">
-                      ${ab.type.toUpperCase()}
-                    </span>
-                    <span class="ability-name-bold">⚡ ${ab.name}</span>
-                  </div>
-                  <span class="ability-desc-text">${ab.description}</span>
-                </div>
-              `).join("") : (active.notes ? `
-                <div class="ability-item-row">
-                  <span class="ability-desc-text">📜 ${active.notes}</span>
-                </div>
-              ` : `
-                <div class="ability-item-row">
-                  <span class="ability-desc-text" style="color: var(--text-subtle);">No custom abilities specified for this character.</span>
-                </div>
-              `)}
-
-              <!-- 4 Equal Action Economy Boxes -->
-              <div class="action-economy-grid">
-                <div class="action-economy-box">
-                  <div class="action-economy-title" style="color: var(--color-gold);">
-                    <span>⚔️</span> Action
-                  </div>
-                  <span class="action-economy-desc">Attack, Cast, Dash, Disengage, Dodge, Help, Hide</span>
-                </div>
-                <div class="action-economy-box">
-                  <div class="action-economy-title" style="color: #34d399;">
-                    <span>⚡</span> Bonus
-                  </div>
-                  <span class="action-economy-desc">Bonus Spells, Offhand, Class feats</span>
-                </div>
-                <div class="action-economy-box">
-                  <div class="action-economy-title" style="color: #60a5fa;">
-                    <span>🛡️</span> Reaction
-                  </div>
-                  <span class="action-economy-desc">Opportunity Attack, Shield, Counter</span>
-                </div>
-                <div class="action-economy-box">
-                  <div class="action-economy-title" style="color: #f1f5f9;">
-                    <span>👟</span> Move
-                  </div>
-                  <span class="action-economy-desc">${active ? active.speed : 30}ft Speed (Walk, climb, swim)</span>
-                </div>
-              </div>
-            </div>
+            ` : ""}
           </div>
-        ` : `
-          <div class="prep-status-banner">
-            <span style="font-size: 20px;">🛡️</span>
-            <div>
-              <strong style="color: var(--color-gold-light); display: block; margin-bottom: 2px;">Encounter in Preparation</strong>
-              <span>Adjust combatant stats, initiatives, or HP below. Press <strong>Start Combat</strong> above when ready to begin Round 1.</span>
-            </div>
-          </div>
-        `}
-
-        ${combatants.length === 0 ? `
-          <div class="dialog-inner-card" style="margin: 0; text-align: center; padding: 24px 16px; align-items: center;">
-            <span style="font-size: 32px;">⚔️</span>
-            <span style="font-size: 16px; font-weight: 800; color: var(--color-gold); margin-top: 6px;">No Combatants in Arena</span>
-            <p style="font-size: 12px; color: var(--text-muted); max-width: 320px; margin: 6px 0 16px 0;">Add your party members or spawn monsters from the SRD bestiary to assemble the encounter.</p>
-            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 280px;">
-              <button class="btn-prep-action solid-gold" onclick="addAllPartyToEncounter()">Add Entire Party</button>
-              <button class="btn-prep-action outline-gold" onclick="store.currentTab = 'bestiary'; renderApp();">Browse Bestiary</button>
-              <button class="btn-prev-turn" style="height: 42px; width: 100%; border-radius: 12px;" onclick="openAddEnemyModal()">+ Add Custom Monster</button>
-            </div>
-          </div>
-        ` : ""}
-      </div>
-
-      <!-- RIGHT COLUMN: Initiative Order Roster -->
-      <div class="combat-right-col">
-        <!-- INITIATIVE ORDER SECTION -->
-        <div class="initiative-section-header">
-          <span class="initiative-title">INITIATIVE ORDER (${combatants.length})</span>
-          <div class="initiative-header-actions">
-            <button class="btn-header-link gold" onclick="openPartyInitiativesModal()">
-              <span>🎲 Party Inits</span>
-            </button>
-            <button class="btn-header-link crimson" onclick="rollMonstersInitiative()">
-              <span>🔄 Roll Monsters</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Combatant List Cards -->
-        <div class="combatants-list-container">
-          ${combatants.map((c, index) => {
-            const isActiveCard = enc.isCombatStarted && index === enc.currentTurnIndex;
-            const isOnDeckCard = enc.isCombatStarted && combatants.length > 1 && index === ((enc.currentTurnIndex + 1) % combatants.length);
-            const hpPercent = Math.min(100, Math.max(0, (c.currentHp / (c.maxHp || 1)) * 100));
-
-            return `
-              <div class="combatant-list-card ${isActiveCard ? "active-turn" : ""} ${c.isDead ? "is-dead" : ""}" id="c-card-${c.id}">
-                <!-- Top Row: Circular Init, Name, Sub, AC Shield, Boot Speed, Remove X -->
-                <div class="combatant-card-top-row">
-                  <div class="circular-init-badge" onclick="openInitModal('${c.id}')" title="Edit Initiative">
-                    <span class="circular-init-num">${c.initiativeRoll}</span>
-                    <span class="circular-init-label">INIT</span>
-                  </div>
-
-                  <div class="combatant-info-group">
-                    <div class="combatant-name-and-badges">
-                      <span class="combatant-list-name">${c.name}</span>
-                      ${isOnDeckCard ? `<span class="badge-on-deck">ON DECK</span>` : ""}
-                    </div>
-                    <span class="combatant-list-sub">${c.characterClassOrType}</span>
-                  </div>
-
-                  <div class="combatant-right-pills">
-                    <div class="pill-shield-ac" onclick="openAcModal('${c.id}')" title="Edit AC">
-                      <span>🛡️</span>
-                      <span>${c.armorClass}</span>
-                    </div>
-                    <div class="pill-boot-speed" onclick="openSpeedModal('${c.id}')" title="Edit Speed">
-                      <span>🥾</span>
-                      <span>${c.speed}ft</span>
-                    </div>
-                    <button class="btn-card-close" onclick="removeCombatant('${c.id}')" title="Remove">✕</button>
-                  </div>
-                </div>
-
-                <!-- HP Row & Quick Chips (-5, -1, +1, +5) -->
-                <div class="turn-hp-row" style="margin-bottom: 4px;">
-                  <div class="hp-main-label" onclick="openDamageHealModal('${c.id}')">
-                    <span>HP:</span>
-                    <span class="hp-current-num ${c.currentHp <= 3 ? "red" : c.currentHp <= 6 ? "low" : ""}">${c.currentHp}</span>
-                    <span>/ ${c.maxHp}</span>
-                    ${c.tempHp > 0 ? `<span class="temp-hp-pill-tag">🛡️ +${c.tempHp} Temp</span>` : ""}
-                  </div>
-
-                  <div class="quick-hp-chips-group">
-                    <button class="chip-quick-hp dmg" onclick="applyDamage('${c.id}', 5)">-5</button>
-                    <button class="chip-quick-hp dmg" onclick="applyDamage('${c.id}', 1)">-1</button>
-                    <button class="chip-quick-hp heal" onclick="applyHealing('${c.id}', 1)">+1</button>
-                    <button class="chip-quick-hp heal" onclick="applyHealing('${c.id}', 5)">+5</button>
-                  </div>
-                </div>
-
-                <!-- HP Bar -->
-                <div class="unified-hp-bar" style="margin-bottom: 6px;" onclick="openDamageHealModal('${c.id}')">
-                  <div class="unified-hp-fill ${c.currentHp <= 3 ? "red" : c.currentHp <= 6 ? "amber" : ""}" style="width: ${hpPercent}%;"></div>
-                  ${c.tempHp > 0 ? `
-                    <div class="unified-hp-temp" style="width: ${Math.min(100, (c.tempHp / (c.maxHp || 1)) * 100)}%;"></div>
-                  ` : ""}
-                </div>
-
-                <!-- Mini Death Saves Status (for dying/dead/stable PCs) -->
-                ${renderDeathSavesMini(c)}
-
-                <!-- Condition Badges & Chips -->
-                <div class="combatant-chips-row">
-                  ${c.coverType && c.coverType !== "NONE" ? `
-                    <span class="pill-cover-badge" onclick="openAcModal('${c.id}')">
-                      ${c.coverType === "HALF" ? "Half Cover" : c.coverType === "THREE_QUARTERS" ? "3/4 Cover" : "Total Cover"}
-                    </span>
-                  ` : ""}
-                  ${c.isDifficultTerrain ? `
-                    <span class="pill-terrain-badge" onclick="openSpeedModal('${c.id}')">
-                      Difficult Terrain
-                    </span>
-                  ` : ""}
-                  ${(c.conditions || []).filter(cn => cn !== "half_cover" && cn !== "three_quarters_cover" && cn !== "total_cover" && cn !== "difficult_terrain").map(cn => {
-                    const condObj = CONDITIONS.find(x => x.id === cn);
-                    return condObj ? `<span class="pill-cover-badge" style="border-color:${condObj.color};" onclick="openConditionsModal('${c.id}')">${condObj.name}</span>` : "";
-                  }).join("")}
-                  <button class="btn-add-condition-chip" onclick="openConditionsModal('${c.id}')">+ Condition</button>
-                </div>
-
-                <!-- Scroll Note Snippet (if available) -->
-                ${c.notes ? `
-                  <div class="scroll-note-snippet">
-                    <span>📜</span>
-                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.notes}</span>
-                  </div>
-                ` : ""}
-              </div>
-            `;
-          }).join("")}
-        </div>
-      </div>
+        `;
+      }).join("")}
     </div>
   `;
 }
