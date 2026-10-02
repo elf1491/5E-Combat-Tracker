@@ -245,14 +245,32 @@ fun WebAppView(modifier: Modifier = Modifier) {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
+                // Use software layer type to avoid MESA rendernode missing errors in virtualized/container environments
+                setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
+                setBackgroundColor(android.graphics.Color.parseColor("#121019"))
+
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
+                settings.databaseEnabled = true
                 settings.allowFileAccess = true
+                settings.allowContentAccess = true
                 settings.useWideViewPort = true
                 settings.loadWithOverviewMode = true
-                settings.setSupportZoom(true)
+                settings.setSupportZoom(false)
                 settings.builtInZoomControls = false
-                webViewClient = WebViewClient()
+                settings.displayZoomControls = false
+
+                webViewClient = object : WebViewClient() {
+                    override fun onRenderProcessGone(
+                        view: WebView?,
+                        detail: android.webkit.RenderProcessGoneDetail?
+                    ): Boolean {
+                        view?.post {
+                            view.loadUrl("file:///android_asset/www/index.html")
+                        }
+                        return true
+                    }
+                }
                 webChromeClient = WebChromeClient()
                 loadUrl("file:///android_asset/www/index.html")
                 webViewRef = this

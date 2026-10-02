@@ -12,6 +12,31 @@
 <body>
 
   <div id="app-shell">
+    <!-- Desktop Top Navigation Header (Screen >= 900px) -->
+    <header class="desktop-top-nav">
+      <div class="desktop-nav-brand">
+        <span class="desktop-brand-icon">⚔️</span>
+        <div class="desktop-brand-titles">
+          <span class="desktop-brand-name">D&D 5E COMBAT TRACKER</span>
+          <span class="desktop-brand-sub">Tabletop Encounter & Initiative Engine</span>
+        </div>
+      </div>
+      <div class="desktop-nav-tabs">
+        <button class="desktop-tab-btn active" data-tab="combat" onclick="setAppTab('combat')">
+          <span>⚔️</span> Combat Arena
+        </button>
+        <button class="desktop-tab-btn" data-tab="party" onclick="setAppTab('party')">
+          <span>👥</span> Party Roster
+        </button>
+        <button class="desktop-tab-btn" data-tab="bestiary" onclick="setAppTab('bestiary')">
+          <span>🐉</span> 5e Bestiary
+        </button>
+        <button class="desktop-tab-btn" data-tab="dice" onclick="setAppTab('dice')">
+          <span>🎲</span> Dice & Rules
+        </button>
+      </div>
+    </header>
+
     <!-- Dynamic Main Content (Combat Arena, Party Roster, Bestiary, Dice & Rules) -->
     <main id="main-container" class="main-view-area">
       <!-- Injected by app.js -->
@@ -315,14 +340,38 @@
 
   <!-- 5. Conditions Modal -->
   <div class="modal-backdrop" id="modal-conditions-dialog">
-    <div class="dialog-container" style="max-width:480px;">
+    <div class="dialog-container" style="max-width:520px;">
       <div class="dialog-header">
         <span class="dialog-header-icon">✨</span>
         <div class="dialog-header-titles">
           <span class="dialog-main-title" id="modal-cond-title">Conditions</span>
+          <span class="dialog-subtitle">Toggle status effects and configure duration timers</span>
         </div>
       </div>
       <div class="dialog-body">
+        <!-- Condition Duration Option Controls -->
+        <div class="condition-duration-selector">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; font-weight:800; color:var(--color-gold); text-transform:uppercase;">Duration / Status Timer</span>
+            <span id="cond-timer-rounds-label" style="font-size:11.5px; color:#38bdf8; font-weight:700;">Permanent</span>
+          </div>
+          <div class="condition-duration-options">
+            <button class="cond-duration-btn active" data-dur="permanent" onclick="setConditionActiveDuration('permanent')">Permanent</button>
+            <button class="cond-duration-btn" data-dur="start_next_turn" onclick="setConditionActiveDuration('start_next_turn')">Start Next Turn</button>
+            <button class="cond-duration-btn" data-dur="end_next_turn" onclick="setConditionActiveDuration('end_next_turn')">End Next Turn</button>
+            <button class="cond-duration-btn" data-dur="end_current_turn" onclick="setConditionActiveDuration('end_current_turn')">End Current Turn</button>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px; padding-top:6px; border-top:1px solid #2f2744;">
+            <span style="font-size:11.5px; color:var(--text-muted);">Timed Rounds:</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button class="bestiary-stepper-btn" onclick="adjustConditionCustomRounds(-1)">−</button>
+              <span id="cond-custom-rounds-num" style="font-size:13.5px; font-weight:800; color:var(--color-gold); min-width:24px; text-align:center;">1</span>
+              <button class="bestiary-stepper-btn" onclick="adjustConditionCustomRounds(1)">+</button>
+              <button class="cond-duration-btn" data-dur="rounds" style="padding:4px 10px; margin-left:4px;" onclick="setConditionActiveDuration('rounds')">Set Rounds</button>
+            </div>
+          </div>
+        </div>
+
         <div id="modal-cond-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; max-height:45vh; overflow-y:auto;"></div>
       </div>
       <div class="dialog-footer">
@@ -474,6 +523,147 @@
       </div>
       <div class="dialog-footer">
         <button class="btn-dialog-cancel" onclick="closeModal('modal-end-combat-dialog')">Keep Fighting (Cancel)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11. Custom Dice Preset Modal -->
+  <div class="modal-backdrop" id="modal-preset-dialog">
+    <div class="dialog-container" style="max-width: 440px;">
+      <div class="dialog-header">
+        <span class="dialog-header-icon">🎲</span>
+        <div class="dialog-header-titles">
+          <span class="dialog-main-title">Save Custom Dice Preset</span>
+          <span class="dialog-subtitle">Create a 1-tap shortcut for your attacks or spells</span>
+        </div>
+      </div>
+      <div class="dialog-body" style="gap: 12px;">
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Preset Name *</label>
+          <input type="text" id="modal-preset-name" class="form-input-outlined" placeholder="e.g. Sneak Attack, Divine Smite">
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Dice Formula *</label>
+          <input type="text" id="modal-preset-formula" class="form-input-outlined" placeholder="e.g. 1d8 + 2d6 + 3 or 4d6">
+          <span style="font-size:11px; color:var(--text-subtle);">Supports standard notation: 2d6+3, 1d8+1d6+4, 8d6, 4d6 drop lowest.</span>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn-dialog-cancel" onclick="closeModal('modal-preset-dialog')">Cancel</button>
+        <button class="btn-dialog-save" onclick="saveCustomDicePreset()">Save Preset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12. Custom Bestiary Monster Modal (Add/Edit in Library) -->
+  <div class="modal-backdrop" id="modal-custom-bestiary-dialog">
+    <div class="dialog-container" style="max-width: 500px;">
+      <div class="dialog-header">
+        <span class="dialog-header-icon">🐉</span>
+        <div class="dialog-header-titles">
+          <span class="dialog-main-title" id="modal-cbestiary-title">Add Monster to Library</span>
+          <span class="dialog-subtitle">Save custom monster into your Bestiary library with full stats</span>
+        </div>
+      </div>
+      <div class="dialog-body" style="gap: 10px; max-height: 65vh; overflow-y: auto;">
+        <input type="hidden" id="modal-cbestiary-original-name" value="">
+        
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Monster Name *</label>
+          <input type="text" id="modal-cbestiary-name" class="form-input-outlined" placeholder="e.g. Ogre Mage, Owlbear Matriarch">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Creature Type *</label>
+            <select id="modal-cbestiary-type" class="form-input-outlined">
+              <option value="Humanoid">Humanoid</option>
+              <option value="Beast">Beast</option>
+              <option value="Undead">Undead</option>
+              <option value="Monstrosity">Monstrosity</option>
+              <option value="Dragon">Dragon</option>
+              <option value="Giant">Giant</option>
+              <option value="Fiend">Fiend</option>
+              <option value="Aberration">Aberration</option>
+              <option value="Construct">Construct</option>
+              <option value="Elemental">Elemental</option>
+              <option value="Fey">Fey</option>
+              <option value="Celestial">Celestial</option>
+              <option value="Ooze">Ooze</option>
+              <option value="Plant">Plant</option>
+            </select>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Challenge Rating (CR) *</label>
+            <select id="modal-cbestiary-cr" class="form-input-outlined">
+              <option value="CR 0">CR 0</option>
+              <option value="CR 1/8">CR 1/8</option>
+              <option value="CR 1/4">CR 1/4</option>
+              <option value="CR 1/2">CR 1/2</option>
+              <option value="CR 1">CR 1</option>
+              <option value="CR 2">CR 2</option>
+              <option value="CR 3">CR 3</option>
+              <option value="CR 4">CR 4</option>
+              <option value="CR 5">CR 5</option>
+              <option value="CR 6">CR 6</option>
+              <option value="CR 7">CR 7</option>
+              <option value="CR 8">CR 8</option>
+              <option value="CR 9">CR 9</option>
+              <option value="CR 10">CR 10</option>
+              <option value="CR 11">CR 11</option>
+              <option value="CR 12">CR 12</option>
+              <option value="CR 13">CR 13</option>
+              <option value="CR 14">CR 14</option>
+              <option value="CR 15">CR 15</option>
+              <option value="CR 16">CR 16</option>
+              <option value="CR 17">CR 17</option>
+              <option value="CR 18">CR 18</option>
+              <option value="CR 19">CR 19</option>
+              <option value="CR 20">CR 20</option>
+              <option value="CR 21+">CR 21+</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Max HP *</label>
+            <input type="number" id="modal-cbestiary-hp" class="form-input-outlined" placeholder="HP" value="25" min="1">
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Armor Class (AC) *</label>
+            <input type="number" id="modal-cbestiary-ac" class="form-input-outlined" placeholder="AC" value="13" min="1">
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Init Mod *</label>
+            <input type="number" id="modal-cbestiary-init" class="form-input-outlined" placeholder="Init" value="1">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Speed (ft) *</label>
+            <input type="number" id="modal-cbestiary-speed" class="form-input-outlined" placeholder="Speed" value="30" min="0" step="5">
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Perception *</label>
+            <input type="number" id="modal-cbestiary-perception" class="form-input-outlined" placeholder="10" value="11">
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Spell DC (opt)</label>
+            <input type="number" id="modal-cbestiary-dc" class="form-input-outlined" placeholder="e.g. 13">
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Traits, Attacks & Special Actions</label>
+          <textarea id="modal-cbestiary-notes" class="form-input-outlined" rows="3" placeholder="e.g. Multiattack (2x Claws +4, 1d8+2), Pack Tactics, Breath Weapon"></textarea>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn-dialog-cancel" onclick="closeModal('modal-custom-bestiary-dialog')">Cancel</button>
+        <button class="btn-dialog-save" onclick="saveCustomMonsterToLibrary()">Save to Library</button>
       </div>
     </div>
   </div>

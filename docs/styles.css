@@ -56,7 +56,7 @@
   --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   /* Layout Constraints */
-  --max-content-width: 680px;
+  --max-content-width: 1440px;
   --nav-height: 66px;
 }
 
@@ -1919,4 +1919,817 @@ body {
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* ==========================================
+   DESKTOP TOP NAVIGATION HEADER
+   ========================================== */
+.desktop-top-nav {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: #171324;
+  border-bottom: 1.5px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.desktop-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.desktop-brand-icon {
+  font-size: 28px;
+}
+
+.desktop-brand-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-brand-name {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--color-gold);
+  letter-spacing: 0.5px;
+}
+
+.desktop-brand-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.desktop-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.desktop-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.desktop-tab-btn:hover {
+  color: var(--text-white);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-card);
+}
+
+.desktop-tab-btn.active {
+  color: #1a1202;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+}
+
+/* ==========================================
+   DESKTOP MULTI-COLUMN RESPONSIVE LAYOUTS
+   ========================================== */
+@media (min-width: 900px) {
+  .desktop-top-nav {
+    display: flex;
+  }
+  .site-bottom-nav {
+    display: none !important;
+  }
+  .main-view-area {
+    padding-bottom: 40px;
+    padding-top: 10px;
+  }
+}
+
+/* Combat Screen Grid on Desktop (>= 1024px) */
+.desktop-combat-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (min-width: 1024px) {
+  .desktop-combat-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 20px;
+    align-items: start;
+    padding: 0 16px 24px 16px;
+  }
+
+  .desktop-combat-left {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: sticky;
+    top: 85px;
+  }
+
+  .desktop-combat-right {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .arena-header-card {
+    margin: 0 !important;
+  }
+
+  .current-turn-card {
+    margin: 0 !important;
+  }
+}
+
+/* Party Screen Grid */
+.party-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .party-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Dice Screen Layout on Desktop */
+.desktop-dice-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@media (min-width: 1024px) {
+  .desktop-dice-layout {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .desktop-dice-right {
+    position: sticky;
+    top: 85px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+}
+
+/* ==========================================
+   BESTIARY TAB (Pixel-Matched to Screenshot)
+   ========================================== */
+.bestiary-screen-container {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bestiary-top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.bestiary-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.bestiary-main-title {
+  font-size: 19px;
+  font-weight: 900;
+  color: #f59e0b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bestiary-subtitle {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.btn-custom-monster {
+  background: #f43f5e;
+  color: #ffffff;
+  border: none;
+  border-radius: 99px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+  box-shadow: 0 3px 10px rgba(244, 63, 94, 0.35);
+}
+
+.btn-custom-monster:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+/* Search Box */
+.bestiary-search-container {
+  position: relative;
+  width: 100%;
+}
+
+.bestiary-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #f59e0b;
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.bestiary-search-input {
+  width: 100%;
+  height: 46px;
+  background: #181424;
+  border: 1.5px solid #2f2744;
+  border-radius: 14px;
+  padding: 0 16px 0 42px;
+  color: #f8fafc;
+  font-size: 13.5px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.bestiary-search-input:focus {
+  border-color: #f59e0b;
+  background: #1e192e;
+}
+
+/* Type Filter Chips */
+.monster-type-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 6px 0;
+  scrollbar-width: none;
+}
+
+.monster-type-chips-row::-webkit-scrollbar {
+  display: none;
+}
+
+.monster-type-chip {
+  padding: 7px 16px;
+  border-radius: 10px;
+  background: #201a2f;
+  border: 1px solid #372f4f;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.monster-type-chip:hover {
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
+.monster-type-chip.active {
+  background: #d97706;
+  border-color: #f59e0b;
+  color: #1a1202;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.35);
+}
+
+/* Bestiary Cards Grid */
+.bestiary-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .bestiary-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 16px;
+  }
+}
+
+.bestiary-monster-card {
+  background: #201a2f;
+  border: 1.5px solid #2f2744;
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.bestiary-monster-card:hover {
+  border-color: #f59e0b;
+}
+
+.bestiary-card-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.bestiary-card-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.bestiary-card-type {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.bestiary-cr-badge {
+  border: 1.5px solid #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+}
+
+/* 5 Squircles Row (AC, HP, INIT, SPD, PERC) */
+.bestiary-squircles-row {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.bestiary-squircle {
+  flex: 1;
+  height: 48px;
+  background: #161222;
+  border: 1px solid #372f4f;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.bestiary-squircle-label {
+  font-size: 8.5px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.bestiary-squircle-val {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.bestiary-notes-text {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+/* Card Bottom Row: Qty Stepper & Deploy Button */
+.bestiary-card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #29223c;
+}
+
+.bestiary-qty-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.bestiary-stepper-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #2a223d;
+  border: 1px solid #3d3356;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.bestiary-stepper-btn:hover {
+  background: #3c3156;
+  border-color: #f59e0b;
+}
+
+.bestiary-qty-num {
+  font-size: 15px;
+  font-weight: 800;
+  color: #f59e0b;
+  min-width: 18px;
+  text-align: center;
+}
+
+.btn-deploy-combat {
+  background: #e11d48;
+  color: #ffffff;
+  border: none;
+  border-radius: 99px;
+  height: 38px;
+  padding: 0 20px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 3px 10px rgba(225, 29, 72, 0.35);
+}
+
+.btn-deploy-combat:hover {
+  background: #f43f5e;
+  transform: translateY(-1px);
+}
+
+/* ==========================================
+   DEATH SAVING THROWS COMPONENT
+   ========================================== */
+.death-saves-container {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1.5px solid rgba(239, 68, 68, 0.4);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.death-saves-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.death-saves-status-badge {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.death-saves-status-badge.dying {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid #ef4444;
+}
+
+.death-saves-status-badge.stabilized {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid #10b981;
+}
+
+.death-saves-status-badge.dead {
+  background: #334155;
+  color: #94a3b8;
+  border: 1px solid #475569;
+}
+
+.death-saves-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.death-save-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.death-save-row-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.death-save-bubbles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.death-bubble-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #181424;
+  border: 1.5px solid #372f4f;
+  color: transparent;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.death-bubble-btn.checked-success {
+  background: #10b981;
+  border-color: #34d399;
+  color: #064e3b;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.death-bubble-btn.checked-failure {
+  background: #ef4444;
+  border-color: #f87171;
+  color: #450a0a;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+.death-save-actions-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 0.8fr;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.btn-death-action {
+  height: 36px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card-darker);
+  color: var(--text-white);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-death-action:hover:not(:disabled) {
+  border-color: var(--color-gold);
+}
+
+.btn-death-action.roll {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: #1a1202;
+}
+
+.btn-death-action.stabilize {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: #10b981;
+  color: #34d399;
+}
+
+.btn-death-action.revive {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  color: #7dd3fc;
+}
+
+/* ==========================================
+   CONDITION STATUS TIMERS & PILLS
+   ========================================== */
+.cond-timer-tag {
+  font-size: 10px;
+  font-weight: 800;
+  opacity: 0.85;
+  margin-left: 2px;
+}
+
+.condition-duration-selector {
+  background: var(--bg-card-darker);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+
+.condition-duration-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cond-duration-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.cond-duration-btn:hover {
+  border-color: var(--color-gold);
+  color: var(--text-white);
+}
+
+.cond-duration-btn.active {
+  background: var(--color-gold);
+  color: #1a1202;
+  border-color: var(--color-gold);
+}
+
+/* Custom Dice Presets Chips */
+.custom-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--bg-card-darker);
+  border: 1px solid var(--border-card);
+  color: var(--text-white);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.custom-preset-chip:hover {
+  border-color: var(--color-gold);
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.custom-preset-del {
+  color: #f43f5e;
+  font-size: 12px;
+  font-weight: 900;
+  margin-left: 2px;
+}
+
+/* Bestiary Controls & Sorting Bar */
+.bestiary-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0 6px 0;
+}
+
+.bestiary-sort-select {
+  height: 40px;
+  background: #181424;
+  border: 1.5px solid #2f2744;
+  border-radius: 12px;
+  padding: 0 12px;
+  color: #f8fafc;
+  font-size: 12.5px;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+}
+
+.bestiary-sort-select:focus {
+  border-color: #f59e0b;
+}
+
+.bestiary-batch-bar {
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.22), rgba(245, 158, 11, 0.18));
+  border: 1.5px solid #f43f5e;
+  border-radius: 14px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.25);
+  animation: fadeIn 0.2s ease;
+}
+
+.bestiary-batch-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.bestiary-card-select-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bestiary-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #f43f5e;
+  cursor: pointer;
+}
+
+/* Desktop layout enhancements for 900px+ */
+@media (min-width: 900px) {
+  .desktop-combat-grid {
+    display: grid !important;
+    grid-template-columns: 460px 1fr !important;
+    gap: 20px !important;
+    align-items: start !important;
+    padding: 0 16px 24px 16px !important;
+  }
+
+  .desktop-combat-left {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    position: sticky !important;
+    top: 85px !important;
+  }
+
+  .desktop-combat-right {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  .desktop-combat-left .arena-header-card,
+  .desktop-combat-left .current-turn-card,
+  .desktop-combat-left .prep-status-banner {
+    margin: 0 !important;
+  }
+
+  .desktop-dice-layout {
+    display: grid !important;
+    grid-template-columns: 1.15fr 1fr !important;
+    gap: 20px !important;
+    align-items: start !important;
+    padding: 0 16px !important;
+  }
+
+  .desktop-dice-right {
+    position: sticky !important;
+    top: 85px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  .desktop-combat-right .combatants-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 12px;
+  }
+  .desktop-combat-right .combatants-list-container .combatant-list-card {
+    margin: 0 !important;
+  }
+}
+
+
 

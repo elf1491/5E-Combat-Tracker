@@ -33,10 +33,22 @@ const MONSTER_PRESETS = [
   { name: "Mage", cr: "CR 6", type: "Humanoid", maxHp: 40, ac: 15, initMod: 2, speed: 30, perception: 11, spellDc: 14, notes: "Spells: Fireball, Greater Invisibility, Shield" },
   { name: "Young Red Dragon", cr: "CR 10", type: "Dragon", maxHp: 178, ac: 18, initMod: 0, speed: 40, perception: 18, spellDc: 17, notes: "Fire Breath (16d6 fire, DC 17 Dex), Fly 80ft" },
   { name: "Beholder", cr: "CR 13", type: "Aberration", maxHp: 180, ac: 18, initMod: 2, speed: 20, perception: 22, spellDc: 16, notes: "Antimagic Cone, 3 random Eye Rays per turn" },
+  { name: "Mind Flayer", cr: "CR 7", type: "Aberration", maxHp: 71, ac: 15, initMod: 1, speed: 30, perception: 17, spellDc: 15, notes: "Mind Blast (DC 15 Int save stun), Tentacles, Extract Brain" },
+  { name: "Brown Bear", cr: "CR 1", type: "Beast", maxHp: 34, ac: 11, initMod: 0, speed: 40, perception: 13, spellDc: null, notes: "Multiattack (Bite + Claws), Keen Smell" },
+  { name: "Giant Spider", cr: "CR 1", type: "Beast", maxHp: 26, ac: 14, initMod: 3, speed: 30, perception: 10, spellDc: null, notes: "Spider Climb, Web (restrains target), Poison Bite" },
+  { name: "Hill Giant", cr: "CR 5", type: "Giant", maxHp: 105, ac: 13, initMod: -1, speed: 40, perception: 12, spellDc: null, notes: "Greatclub +8 (3d8+5), Rock throw 60ft" },
+  { name: "Green Dragon Wyrmling", cr: "CR 2", type: "Dragon", maxHp: 38, ac: 17, initMod: 1, speed: 30, perception: 14, spellDc: 11, notes: "Poison Breath (DC 11 Con save, 6d6 poison), Fly 60ft" },
+  { name: "Owlbear", cr: "CR 3", type: "Monstrosity", maxHp: 59, ac: 13, initMod: 1, speed: 40, perception: 13, spellDc: null, notes: "Keen Sight and Smell, Multiattack (Beak + Claws)" },
+  { name: "Minotaur", cr: "CR 3", type: "Monstrosity", maxHp: 76, ac: 14, initMod: 0, speed: 40, perception: 17, spellDc: null, notes: "Charge (+2d8 gore), Reckless, Labyrinthine Recall" },
+  { name: "Imp", cr: "CR 1", type: "Fiend", maxHp: 10, ac: 13, initMod: 3, speed: 20, perception: 11, spellDc: null, notes: "Invisibility, Sting with poison, Shapechanger, Magic Resistance" },
+  { name: "Hell Hound", cr: "CR 3", type: "Fiend", maxHp: 45, ac: 15, initMod: 1, speed: 50, perception: 15, spellDc: 12, notes: "Fire Breath (DC 12 Dex, 6d6 fire), Pack Tactics" },
+  { name: "Animated Armor", cr: "CR 1", type: "Construct", maxHp: 33, ac: 18, initMod: 0, speed: 25, perception: 6, spellDc: null, notes: "Antimagic Susceptibility, False Appearance, Blind beyond 60ft" },
   { name: "Lich", cr: "CR 21", type: "Undead", maxHp: 135, ac: 17, initMod: 3, speed: 30, perception: 19, spellDc: 20, notes: "Legendary Actions, Power Word Kill, Disrupt Life" }
 ];
 
 const CONDITIONS = [
+  { id: "bardic_inspiration", name: "Bardic Inspiration", color: "#F59E0B", desc: "Roll an Inspiration Die (1d6-1d12) and add it to one ability check, attack roll, or saving throw." },
+  { id: "inspiration", name: "Inspiration", color: "#EC4899", desc: "Heroic Inspiration: Spend to reroll any d20 or gain advantage on an attack roll, save, or check." },
   { id: "blinded", name: "Blinded", color: "#64748B", desc: "Can't see and automatically fails checks requiring sight. Attacks against have advantage, attack rolls have disadvantage." },
   { id: "charmed", name: "Charmed", color: "#EC4899", desc: "Can't attack the charmer. Charmer has advantage on social ability checks." },
   { id: "concentrating", name: "Concentrating", color: "#A855F7", desc: "Must make Con save (DC 10 or half damage taken) when taking damage to maintain spell." },
@@ -260,6 +272,32 @@ class DndStore {
     this.diceTray = { 4: 0, 6: 0, 8: 0, 10: 0, 12: 0, 20: 0, 100: 0 };
     this.diceSubTab = "roller"; // "roller", "conditions", "rules"
     this.diceInputMode = "standard"; // "standard", "tray"
+
+    // Bestiary Filtering & Multi-select State (Matching Screenshot)
+    this.bestiarySearchQuery = "";
+    this.bestiarySelectedType = "All";
+    this.bestiarySortBy = "type";
+    this.bestiaryQuantities = {};
+    this.bestiarySelectedMonsters = {};
+
+    // Condition Duration Picker State
+    this.activeConditionDuration = "permanent";
+    this.activeConditionRounds = 1;
+
+    // Custom Dice Presets (Saved by user)
+    this.customDicePresets = this.load("dnd_custom_presets_v2", [
+      { id: "p-d20", name: "1d20 Check", formula: "1d20", isDefault: true },
+      { id: "p-d20adv", name: "1d20 (Adv)", formula: "1d20 (Advantage)", isDefault: true },
+      { id: "p-greatsword", name: "2d6+3 Greatsword", formula: "2d6 + 3", isDefault: true },
+      { id: "p-longsword", name: "1d8+3 Longsword", formula: "1d8 + 3", isDefault: true },
+      { id: "p-greataxe", name: "1d12+3 Greataxe", formula: "1d12 + 3", isDefault: true },
+      { id: "p-fireball", name: "8d6 Fireball", formula: "8d6", isDefault: true },
+      { id: "p-stats", name: "4d6 Drop Lowest", formula: "4d6 drop lowest", isDefault: true },
+      { id: "p-cantrip", name: "1d10 Cantrip", formula: "1d10", isDefault: true }
+    ]);
+
+    // Custom Bestiary Monsters (Saved by user in library)
+    this.customBestiaryMonsters = this.load("dnd_custom_bestiary_v1", []);
   }
 
   load(key, fallback) {
@@ -276,6 +314,8 @@ class DndStore {
       localStorage.setItem("dnd_party_v2", JSON.stringify(this.party));
       localStorage.setItem("dnd_encounter_v2", JSON.stringify(this.encounter));
       localStorage.setItem("dnd_dice_hist_v2", JSON.stringify(this.diceHistory));
+      localStorage.setItem("dnd_custom_presets_v2", JSON.stringify(this.customDicePresets));
+      localStorage.setItem("dnd_custom_bestiary_v1", JSON.stringify(this.customBestiaryMonsters || []));
     } catch (e) {}
   }
 
@@ -293,6 +333,11 @@ class DndStore {
 }
 
 const store = new DndStore();
+
+function getAllBestiaryMonsters() {
+  const custom = (store && store.customBestiaryMonsters) || [];
+  return [...custom, ...MONSTER_PRESETS];
+}
 
 // ==========================================
 // UTILITY FUNCTIONS
@@ -335,42 +380,21 @@ function sortCombatants(list) {
 // COMBAT & TURN PROGRESSION
 // ==========================================
 
-function startCombat() {
-  if (store.encounter.combatants.length === 0) {
-    showToast("Add combatants to start combat");
-    return;
-  }
-  // Auto-roll monsters initiative
-  store.encounter.combatants = store.encounter.combatants.map(c => {
-    if (!c.isPlayer) {
-      return { ...c, initiativeRoll: rollD20() + c.initiativeModifier };
-    }
-    return c;
-  });
-  store.encounter.combatants = sortCombatants(store.encounter.combatants);
-  store.encounter.round = 1;
-  store.encounter.currentTurnIndex = 0;
-  store.encounter.isCombatStarted = true;
-
-  const actor = store.encounter.combatants[0]?.name || "";
-  store.logEvent(`⚔️ Combat Started! Round 1 begins. ${actor}'s turn.`, "turn");
-  store.save();
-  renderApp();
-  showToast("⚔️ Combat Started!");
-}
-
 function nextTurn() {
   const total = store.encounter.combatants.length;
   if (total === 0) return;
+  const previousActor = store.encounter.combatants[store.encounter.currentTurnIndex];
   let nextIdx = store.encounter.currentTurnIndex;
   let nextRound = store.encounter.round;
   let attempts = 0;
+  let isNewRound = false;
 
   do {
     nextIdx++;
     if (nextIdx >= total) {
       nextIdx = 0;
       nextRound++;
+      isNewRound = true;
       store.logEvent(`🛡️ Round ${nextRound} begins!`, "turn");
     }
     attempts++;
@@ -379,10 +403,14 @@ function nextTurn() {
   store.encounter.currentTurnIndex = nextIdx;
   store.encounter.round = nextRound;
 
-  const actor = store.encounter.combatants[nextIdx];
-  if (actor && !actor.isDead) {
-    store.logEvent(`Turn passed to ${actor.name}`, "turn");
+  const currentActor = store.encounter.combatants[nextIdx];
+  if (currentActor && !currentActor.isDead) {
+    store.logEvent(`Turn passed to ${currentActor.name}`, "turn");
   }
+
+  // Check Condition Timers
+  checkConditionExpirations(previousActor, currentActor, isNewRound);
+
   store.save();
   renderApp();
 }
@@ -410,6 +438,211 @@ function prevTurn() {
 
   store.encounter.currentTurnIndex = prevIdx;
   store.encounter.round = prevRound;
+  store.save();
+  renderApp();
+}
+
+// ------------------------------------------
+// CONDITION TIMERS & HELPERS
+// ------------------------------------------
+
+function getConditionName(id) {
+  const cond = CONDITIONS.find(c => c.id === id);
+  return cond ? cond.name : id;
+}
+
+function getConditionInfo(cItem) {
+  const id = typeof cItem === "string" ? cItem : cItem.id;
+  const condDef = CONDITIONS.find(x => x.id === id);
+  if (!condDef) return null;
+  let timerLabel = "";
+  if (typeof cItem === "object") {
+    if (cItem.duration === "rounds") {
+      timerLabel = `(${cItem.roundsRemaining || 1} rnd${(cItem.roundsRemaining || 1) === 1 ? '' : 's'})`;
+    } else if (cItem.duration === "start_next_turn") {
+      timerLabel = `(start next turn)`;
+    } else if (cItem.duration === "end_next_turn") {
+      timerLabel = `(end next turn)`;
+    } else if (cItem.duration === "end_current_turn") {
+      timerLabel = `(end of turn)`;
+    }
+  }
+  return {
+    ...condDef,
+    duration: typeof cItem === "object" ? cItem.duration : "permanent",
+    roundsRemaining: typeof cItem === "object" ? cItem.roundsRemaining : null,
+    timerLabel: timerLabel
+  };
+}
+
+function checkConditionExpirations(prevActor, currActor, isNewRound) {
+  if (prevActor && prevActor.conditions) {
+    prevActor.conditions = prevActor.conditions.filter(cn => {
+      const isObj = typeof cn === 'object';
+      const duration = isObj ? cn.duration : 'permanent';
+      if (duration === 'end_current_turn') {
+        store.logEvent(`⏳ ${getConditionName(cn.id)} ended for ${prevActor.name}.`, "info");
+        return false;
+      }
+      if (duration === 'end_next_turn') {
+        if ((cn.turnsPassed || 0) >= 1) {
+          store.logEvent(`⏳ ${getConditionName(cn.id)} expired on ${prevActor.name}.`, "info");
+          return false;
+        }
+        cn.turnsPassed = (cn.turnsPassed || 0) + 1;
+      }
+      return true;
+    });
+  }
+
+  if (currActor && currActor.conditions) {
+    currActor.conditions = currActor.conditions.filter(cn => {
+      const isObj = typeof cn === 'object';
+      const duration = isObj ? cn.duration : 'permanent';
+      if (duration === 'start_next_turn') {
+        store.logEvent(`⏳ ${getConditionName(cn.id)} expired on ${currActor.name}.`, "info");
+        return false;
+      }
+      return true;
+    });
+  }
+
+  if (isNewRound) {
+    store.encounter.combatants.forEach(c => {
+      if (c.conditions) {
+        c.conditions = c.conditions.filter(cn => {
+          if (typeof cn === 'object' && cn.duration === 'rounds') {
+            cn.roundsRemaining = (cn.roundsRemaining || 1) - 1;
+            if (cn.roundsRemaining <= 0) {
+              store.logEvent(`⏳ ${getConditionName(cn.id)} expired on ${c.name}.`, "info");
+              return false;
+            }
+          }
+          return true;
+        });
+      }
+    });
+  }
+}
+
+// ------------------------------------------
+// DEATH SAVING THROWS LOGIC
+// ------------------------------------------
+
+function rollDeathSave(combatantId) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c || c.currentHp > 0 || c.isDead) return;
+
+  const roll = rollD20();
+  let logText = "";
+
+  if (roll === 20) {
+    c.currentHp = 1;
+    c.deathSavesSuccess = 0;
+    c.deathSavesFailure = 0;
+    c.isStabilized = false;
+    c.conditions = (c.conditions || []).filter(cn => (typeof cn === 'string' ? cn : cn.id) !== "unconscious");
+    logText = `🌟 NATURAL 20! ${c.name} regains 1 HP and wakes up!`;
+    showToast(`🌟 Natural 20! ${c.name} revived with 1 HP!`);
+  } else if (roll === 1) {
+    c.deathSavesFailure = Math.min(3, (c.deathSavesFailure || 0) + 2);
+    logText = `💀 NATURAL 1! ${c.name} suffers 2 Death Save Failures! (${c.deathSavesFailure}/3)`;
+    showToast(`💀 Natural 1! 2 Failures on ${c.name}!`);
+    if (c.deathSavesFailure >= 3) {
+      c.isDead = true;
+      logText += ` 💀 ${c.name} has succumbed to their wounds and died.`;
+      showToast(`💀 ${c.name} has died.`);
+    }
+  } else if (roll >= 10) {
+    c.deathSavesSuccess = Math.min(3, (c.deathSavesSuccess || 0) + 1);
+    logText = `🛡️ Death Save Success (Rolled ${roll}) for ${c.name}. (${c.deathSavesSuccess}/3)`;
+    showToast(`Death Save Success (${roll}) for ${c.name}`);
+    if (c.deathSavesSuccess >= 3) {
+      c.isStabilized = true;
+      logText += ` 🛡️ ${c.name} has STABILIZED!`;
+      showToast(`🛡️ ${c.name} stabilized!`);
+    }
+  } else {
+    c.deathSavesFailure = Math.min(3, (c.deathSavesFailure || 0) + 1);
+    logText = `⚠️ Death Save Failure (Rolled ${roll}) for ${c.name}. (${c.deathSavesFailure}/3)`;
+    showToast(`Death Save Failure (${roll}) for ${c.name}`);
+    if (c.deathSavesFailure >= 3) {
+      c.isDead = true;
+      logText += ` 💀 ${c.name} has died.`;
+      showToast(`💀 ${c.name} has died.`);
+    }
+  }
+
+  store.logEvent(logText, roll >= 10 ? "heal" : "damage");
+  store.save();
+  renderApp();
+}
+
+function toggleDeathSaveSuccess(combatantId, num) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c) return;
+  c.deathSavesSuccess = (c.deathSavesSuccess === num) ? num - 1 : num;
+  if (c.deathSavesSuccess >= 3) {
+    c.isStabilized = true;
+    showToast(`${c.name} is stabilized`);
+  } else {
+    c.isStabilized = false;
+  }
+  store.save();
+  renderApp();
+}
+
+function toggleDeathSaveFailure(combatantId, num) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c) return;
+  c.deathSavesFailure = (c.deathSavesFailure === num) ? num - 1 : num;
+  if (c.deathSavesFailure >= 3) {
+    c.isDead = true;
+    showToast(`${c.name} has died`);
+  } else {
+    c.isDead = false;
+  }
+  store.save();
+  renderApp();
+}
+
+function stabilizeCombatant(combatantId) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c) return;
+  c.isStabilized = !c.isStabilized;
+  if (c.isStabilized) {
+    c.deathSavesFailure = 0;
+    store.logEvent(`🛡️ ${c.name} was stabilized.`, "info");
+    showToast(`${c.name} stabilized`);
+  } else {
+    store.logEvent(`${c.name} is no longer stabilized.`, "info");
+  }
+  store.save();
+  renderApp();
+}
+
+function reviveCombatant(combatantId) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c) return;
+  c.currentHp = 1;
+  c.isDead = false;
+  c.isStabilized = false;
+  c.deathSavesSuccess = 0;
+  c.deathSavesFailure = 0;
+  c.conditions = (c.conditions || []).filter(cn => (typeof cn === 'string' ? cn : cn.id) !== "unconscious" && (typeof cn === 'string' ? cn : cn.id) !== "dead");
+  store.logEvent(`✨ ${c.name} was revived with 1 HP!`, "heal");
+  showToast(`${c.name} revived with 1 HP!`);
+  store.save();
+  renderApp();
+}
+
+function resetDeathSaves(combatantId) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c) return;
+  c.deathSavesSuccess = 0;
+  c.deathSavesFailure = 0;
+  c.isStabilized = false;
+  c.isDead = false;
   store.save();
   renderApp();
 }
@@ -528,14 +761,36 @@ function applyDamage(combatantId, amount) {
       }
     }
 
+    const wasAtZero = c.currentHp === 0;
     const afterHp = Math.max(0, c.currentHp - damageRemaining);
     finalHp = afterHp;
     let conditions = [...(c.conditions || [])];
+
+    let savesFail = c.deathSavesFailure || 0;
+    let isDead = c.isDead || false;
+    let isStab = c.isStabilized || false;
+
+    if (afterHp === 0) {
+      isStab = false;
+      if (!conditions.some(cn => (typeof cn === 'string' ? cn : cn.id) === "unconscious")) {
+        conditions.push("unconscious");
+      }
+      if (wasAtZero && damageRemaining > 0) {
+        savesFail = Math.min(3, savesFail + 1);
+        if (savesFail >= 3) {
+          isDead = true;
+          conditions.push("dead");
+        }
+      }
+    }
 
     return {
       ...c,
       currentHp: afterHp,
       tempHp: currentTemp,
+      deathSavesFailure: savesFail,
+      isStabilized: isStab,
+      isDead: isDead,
       conditions: conditions
     };
   });
@@ -555,9 +810,23 @@ function applyHealing(combatantId, amount) {
     targetName = c.name;
     const healed = Math.min(c.maxHp, c.currentHp + amount);
     finalHp = healed;
+    let conditions = [...(c.conditions || [])];
+
+    if (c.currentHp === 0 && healed > 0) {
+      conditions = conditions.filter(cn => {
+        const id = typeof cn === 'string' ? cn : cn.id;
+        return id !== "unconscious" && id !== "dead";
+      });
+    }
+
     return {
       ...c,
-      currentHp: healed
+      currentHp: healed,
+      deathSavesSuccess: (c.currentHp === 0 && healed > 0) ? 0 : (c.deathSavesSuccess || 0),
+      deathSavesFailure: (c.currentHp === 0 && healed > 0) ? 0 : (c.deathSavesFailure || 0),
+      isStabilized: false,
+      isDead: false,
+      conditions: conditions
     };
   });
 
@@ -589,10 +858,22 @@ function renderApp() {
       break;
   }
 
+  // Update Desktop Tab active state
+  document.querySelectorAll(".desktop-tab-btn").forEach(item => {
+    item.classList.toggle("active", item.dataset.tab === store.currentTab);
+  });
+
   // Update Bottom Nav active state
   document.querySelectorAll(".nav-tab-item").forEach(item => {
     item.classList.toggle("active", item.dataset.tab === store.currentTab);
   });
+}
+
+// Global Tab Setter
+function setAppTab(tab) {
+  store.currentTab = tab;
+  renderApp();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 // ------------------------------------------
@@ -608,323 +889,431 @@ function renderCombatScreen() {
   const enemyCount = combatants.filter(c => !c.isPlayer).length;
 
   return `
-    <!-- Top Header Card (Screenshot: Round 1, 2 PCs • 2 Foes, Dice, Clock, Add) -->
-    <div class="arena-header-card">
-      <div class="arena-header-top-row">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <div class="round-indicator-pill ${enc.isCombatStarted ? "active" : "prep"}">
-            <span>⚔️</span>
-            <span>${enc.isCombatStarted ? `Round ${enc.round}` : "Preparation"}</span>
-          </div>
-          <span class="arena-counts-text">${playerCount} PCs • ${enemyCount} Foes</span>
-        </div>
-
-        <div class="arena-top-actions">
-          <button class="icon-btn-header gold" onclick="store.currentTab = 'dice'; renderApp();" title="Dice Roller">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
-          </button>
-          <button class="icon-btn-header" onclick="openLogModal()" title="Combat Log">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
-          </button>
-          <button class="icon-btn-header crimson" onclick="openAddEnemyModal()" title="Add Enemy">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-          </button>
-        </div>
-      </div>
-
-      ${enc.isCombatStarted ? `
-        <!-- Turn Controls Row (Prev, Next Turn, Stop) -->
-        <div class="turn-controls-row">
-          <button class="btn-prev-turn" onclick="prevTurn()">
-            <span>|◀</span>
-            <span>Prev</span>
-          </button>
-          <button class="btn-next-turn" onclick="nextTurn()">
-            <span>Next Turn</span>
-            <span>▶|</span>
-          </button>
-          <button class="btn-stop-combat" onclick="openEndCombatModal()" title="End Combat">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
-          </button>
-        </div>
-      ` : `
-        <!-- Preparation Mode Controls -->
-        <div class="prep-controls-col">
-          ${playerCount > 0 ? `
-            <button class="btn-prep-action outline-gold" onclick="openPartyInitiativesModal()">
-              <span>🎲</span>
-              <span>Input Player Initiatives</span>
-            </button>
-          ` : ""}
-          <button class="btn-prep-action solid-gold" onclick="startCombat(true)" ${combatants.length === 0 ? "disabled" : ""}>
-            <span>⚔️</span>
-            <span>${enemyCount > 0 ? "Start Combat (Auto-Rolls Monsters)" : "Start Combat"}</span>
-          </button>
-        </div>
-      `}
-    </div>
-
-    <!-- CURRENT TURN SPOTLIGHT CARD OR PREPARATION BANNER -->
-    ${(enc.isCombatStarted && active) ? `
-      <div class="current-turn-card">
-        <!-- Top row: CURRENT TURN, Player/Monster, On Deck -->
-        <div class="current-turn-top-row">
-          <div class="current-turn-badges">
-            <span class="badge-current-turn">CURRENT TURN</span>
-            <span class="badge-player-indicator ${active.isPlayer ? "" : "monster"}">
-              ${active.isPlayer ? "🛡️ Player" : "👹 Monster"}
-            </span>
-          </div>
-          ${onDeck ? `<span class="on-deck-text">On Deck: ${onDeck.name}</span>` : ""}
-        </div>
-
-        <!-- Name & Squircles for AC, INIT, SPD -->
-        <div class="turn-name-and-stats">
-          <div class="turn-name-group">
-            <span class="turn-name-title">${active.name}</span>
-            <span class="turn-name-class">${active.characterClassOrType}</span>
-          </div>
-
-          <div class="turn-stats-squircles">
-            <div class="stat-squircle" onclick="openAcModal('${active.id}')" title="Edit AC">
-              <span class="stat-squircle-label">AC</span>
-              <span class="stat-squircle-val">${active.armorClass}</span>
-            </div>
-            <div class="stat-squircle" onclick="openInitModal('${active.id}')" title="Edit Initiative">
-              <span class="stat-squircle-label">INIT</span>
-              <span class="stat-squircle-val">${active.initiativeRoll}</span>
-            </div>
-            <div class="stat-squircle" onclick="openSpeedModal('${active.id}')" title="Edit Speed">
-              <span class="stat-squircle-label">SPD</span>
-              <span class="stat-squircle-val">${active.speed}ft</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- HP Row & Quick Chips (-5, -1, +1, +5) -->
-        <div class="turn-hp-row">
-          <div class="hp-main-label" onclick="openDamageHealModal('${active.id}')">
-            <span>HP:</span>
-            <span class="hp-current-num ${active.currentHp <= 3 ? "red" : active.currentHp <= 6 ? "low" : ""}">${active.currentHp}</span>
-            <span>/ ${active.maxHp}</span>
-            ${active.tempHp > 0 ? `
-              <span class="temp-hp-pill-tag">🛡️ +${active.tempHp} Temp HP</span>
-            ` : ""}
-          </div>
-
-          <div class="quick-hp-chips-group">
-            <button class="chip-quick-hp dmg" onclick="applyDamage('${active.id}', 5)">-5</button>
-            <button class="chip-quick-hp dmg" onclick="applyDamage('${active.id}', 1)">-1</button>
-            <button class="chip-quick-hp heal" onclick="applyHealing('${active.id}', 1)">+1</button>
-            <button class="chip-quick-hp heal" onclick="applyHealing('${active.id}', 5)">+5</button>
-          </div>
-        </div>
-
-        <!-- HP Bar with Temp HP overlay -->
-        <div class="unified-hp-bar" onclick="openDamageHealModal('${active.id}')">
-          <div class="unified-hp-fill ${active.currentHp <= 3 ? "red" : active.currentHp <= 6 ? "amber" : ""}" style="width: ${Math.min(100, Math.max(0, (active.currentHp / (active.maxHp || 1)) * 100))}%;"></div>
-          ${active.tempHp > 0 ? `
-            <div class="unified-hp-temp" style="width: ${Math.min(100, (active.tempHp / (active.maxHp || 1)) * 100)}%;"></div>
-          ` : ""}
-        </div>
-
-        <!-- 3 Big Action Buttons (💥 Damage, 💚 Heal, ✨ Condition) -->
-        <div class="turn-action-buttons-row">
-          <button class="btn-turn-action damage" onclick="openDamageHealModal('${active.id}')">
-            <span>💥 Damage</span>
-          </button>
-          <button class="btn-turn-action heal" onclick="openDamageHealModal('${active.id}')">
-            <span>💚 Heal</span>
-          </button>
-          <button class="btn-turn-action condition" onclick="openConditionsModal('${active.id}')">
-            <span>✨ Condition</span>
-          </button>
-        </div>
-
-        <!-- ABILITIES & ACTIONS SECTION -->
-        <div class="abilities-section-card">
-          <div class="abilities-section-header">
-            <span>⚡</span>
-            <span>ABILITIES & ACTIONS</span>
-          </div>
-
-          <!-- Dynamic character ability rows -->
-          ${(active.abilities && active.abilities.length > 0) ? active.abilities.map(ab => `
-            <div class="ability-item-row">
-              <div class="ability-title-line">
-                <span class="ability-type-badge ${ab.type.toLowerCase().includes('bonus') ? 'bonus' : ab.type.toLowerCase().includes('feat') ? 'feat' : ab.type.toLowerCase().includes('reaction') ? 'reaction' : 'action'}">
-                  ${ab.type.toUpperCase()}
-                </span>
-                <span class="ability-name-bold">⚡ ${ab.name}</span>
+    <div class="desktop-combat-grid">
+      <!-- LEFT COLUMN ON PC (Sticky Dashboard) -->
+      <div class="desktop-combat-left">
+        <!-- Top Header Card (Screenshot: Round 1, 2 PCs • 2 Foes, Dice, Clock, Add) -->
+        <div class="arena-header-card">
+          <div class="arena-header-top-row">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="round-indicator-pill ${enc.isCombatStarted ? "active" : "prep"}">
+                <span>⚔️</span>
+                <span>${enc.isCombatStarted ? `Round ${enc.round}` : "Preparation"}</span>
               </div>
-              <span class="ability-desc-text">${ab.description}</span>
+              <span class="arena-counts-text">${playerCount} PCs • ${enemyCount} Foes</span>
             </div>
-          `).join("") : (active.notes ? `
-            <div class="ability-item-row">
-              <span class="ability-desc-text">📜 ${active.notes}</span>
+
+            <div class="arena-top-actions">
+              <button class="icon-btn-header gold" onclick="store.currentTab = 'dice'; renderApp();" title="Dice Roller">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM7.5 18a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm4.5 4.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0-9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>
+              </button>
+              <button class="icon-btn-header" onclick="openLogModal()" title="Combat Log">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+              </button>
+              <button class="icon-btn-header crimson" onclick="openAddEnemyModal()" title="Add Enemy">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          ${enc.isCombatStarted ? `
+            <!-- Turn Controls Row (Prev, Next Turn, Stop) -->
+            <div class="turn-controls-row">
+              <button class="btn-prev-turn" onclick="prevTurn()">
+                <span>|◀</span>
+                <span>Prev</span>
+              </button>
+              <button class="btn-next-turn" onclick="nextTurn()">
+                <span>Next Turn</span>
+                <span>▶|</span>
+              </button>
+              <button class="btn-stop-combat" onclick="openEndCombatModal()" title="End Combat">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 6h12v12H6z"/></svg>
+              </button>
             </div>
           ` : `
-            <div class="ability-item-row">
-              <span class="ability-desc-text" style="color: var(--text-subtle);">No custom abilities specified for this character.</span>
+            <!-- Preparation Mode Controls -->
+            <div class="prep-controls-col">
+              ${playerCount > 0 ? `
+                <button class="btn-prep-action outline-gold" onclick="openPartyInitiativesModal()">
+                  <span>🎲</span>
+                  <span>Input Player Initiatives</span>
+                </button>
+              ` : ""}
+              <button class="btn-prep-action solid-gold" onclick="startCombat(true)" ${combatants.length === 0 ? "disabled" : ""}>
+                <span>⚔️</span>
+                <span>${enemyCount > 0 ? "Start Combat (Auto-Rolls Monsters)" : "Start Combat"}</span>
+              </button>
             </div>
-          `)}
-
-          <!-- 4 Equal Action Economy Boxes -->
-          <div class="action-economy-grid">
-            <div class="action-economy-box">
-              <div class="action-economy-title" style="color: var(--color-gold);">
-                <span>⚔️</span> Action
-              </div>
-              <span class="action-economy-desc">Attack, Cast, Dash, Disengage, Dodge, Help, Hide</span>
-            </div>
-            <div class="action-economy-box">
-              <div class="action-economy-title" style="color: #34d399;">
-                <span>⚡</span> Bonus
-              </div>
-              <span class="action-economy-desc">Bonus Spells, Offhand, Class feats</span>
-            </div>
-            <div class="action-economy-box">
-              <div class="action-economy-title" style="color: #60a5fa;">
-                <span>🛡️</span> Reaction
-              </div>
-              <span class="action-economy-desc">Opportunity Attack, Shield, Counter</span>
-            </div>
-            <div class="action-economy-box">
-              <div class="action-economy-title" style="color: #f1f5f9;">
-                <span>👟</span> Move
-              </div>
-              <span class="action-economy-desc">${active ? active.speed : 30}ft Speed (Walk, climb, swim)</span>
-            </div>
-          </div>
+          `}
         </div>
-      </div>
-    ` : `
-      <div class="prep-status-banner">
-        <span style="font-size: 20px;">🛡️</span>
-        <div>
-          <strong style="color: var(--color-gold-light); display: block; margin-bottom: 2px;">Encounter in Preparation</strong>
-          <span>Adjust combatant stats, initiatives, or HP below. Press <strong>Start Combat</strong> above when ready to begin Round 1.</span>
-        </div>
-      </div>
-    `}
 
-    ${combatants.length === 0 ? `
-      <div class="dialog-inner-card" style="margin: 12px; text-align: center; padding: 24px 16px; align-items: center;">
-        <span style="font-size: 32px;">⚔️</span>
-        <span style="font-size: 16px; font-weight: 800; color: var(--color-gold); margin-top: 6px;">No Combatants in Arena</span>
-        <p style="font-size: 12px; color: var(--text-muted); max-width: 320px; margin: 6px 0 16px 0;">Add your party members or spawn monsters from the SRD bestiary to assemble the encounter.</p>
-        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 280px;">
-          <button class="btn-prep-action solid-gold" onclick="addAllPartyToEncounter()">Add Entire Party</button>
-          <button class="btn-prep-action outline-gold" onclick="store.currentTab = 'bestiary'; renderApp();">Browse Bestiary</button>
-          <button class="btn-prev-turn" style="height: 42px; width: 100%; border-radius: 12px;" onclick="openAddEnemyModal()">+ Add Custom Monster</button>
-        </div>
-      </div>
-    ` : ""}
+        <!-- CURRENT TURN SPOTLIGHT CARD OR PREPARATION BANNER -->
+        ${(enc.isCombatStarted && active) ? `
+          <div class="current-turn-card">
+            <!-- Top row: CURRENT TURN, Player/Monster, On Deck -->
+            <div class="current-turn-top-row">
+              <div class="current-turn-badges">
+                <span class="badge-current-turn">CURRENT TURN</span>
+                <span class="badge-player-indicator ${active.isPlayer ? "" : "monster"}">
+                  ${active.isPlayer ? "🛡️ Player" : "👹 Monster"}
+                </span>
+              </div>
+              ${onDeck ? `<span class="on-deck-text">On Deck: ${onDeck.name}</span>` : ""}
+            </div>
 
-    <!-- INITIATIVE ORDER SECTION -->
-    <div class="initiative-section-header">
-      <span class="initiative-title">INITIATIVE ORDER (${combatants.length})</span>
-      <div class="initiative-header-actions">
-        <button class="btn-header-link gold" onclick="openPartyInitiativesModal()">
-          <span>🎲 Party Inits</span>
-        </button>
-        <button class="btn-header-link crimson" onclick="rollMonstersInitiative()">
-          <span>🔄 Roll Monsters</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Combatant List Cards -->
-    <div class="combatants-list-container">
-      ${combatants.map((c, index) => {
-        const isActiveCard = enc.isCombatStarted && index === enc.currentTurnIndex;
-        const isOnDeckCard = enc.isCombatStarted && combatants.length > 1 && index === ((enc.currentTurnIndex + 1) % combatants.length);
-        const hpPercent = Math.min(100, Math.max(0, (c.currentHp / (c.maxHp || 1)) * 100));
-
-        return `
-          <div class="combatant-list-card ${isActiveCard ? "active-turn" : ""} ${c.isDead ? "is-dead" : ""}" id="c-card-${c.id}">
-            <!-- Top Row: Circular Init, Name, Sub, AC Shield, Boot Speed, Remove X -->
-            <div class="combatant-card-top-row">
-              <div class="circular-init-badge" onclick="openInitModal('${c.id}')" title="Edit Initiative">
-                <span class="circular-init-num">${c.initiativeRoll}</span>
-                <span class="circular-init-label">INIT</span>
+            <!-- Name & Squircles for AC, INIT, SPD -->
+            <div class="turn-name-and-stats">
+              <div class="turn-name-group">
+                <span class="turn-name-title">${active.name}</span>
+                <span class="turn-name-class">${active.characterClassOrType}</span>
               </div>
 
-              <div class="combatant-info-group">
-                <div class="combatant-name-and-badges">
-                  <span class="combatant-list-name">${c.name}</span>
-                  ${isOnDeckCard ? `<span class="badge-on-deck">ON DECK</span>` : ""}
+              <div class="turn-stats-squircles">
+                <div class="stat-squircle" onclick="openAcModal('${active.id}')" title="Edit AC">
+                  <span class="stat-squircle-label">AC</span>
+                  <span class="stat-squircle-val">${active.armorClass}</span>
                 </div>
-                <span class="combatant-list-sub">${c.characterClassOrType}</span>
-              </div>
-
-              <div class="combatant-right-pills">
-                <div class="pill-shield-ac" onclick="openAcModal('${c.id}')" title="Edit AC">
-                  <span>🛡️</span>
-                  <span>${c.armorClass}</span>
+                <div class="stat-squircle" onclick="openInitModal('${active.id}')" title="Edit Initiative">
+                  <span class="stat-squircle-label">INIT</span>
+                  <span class="stat-squircle-val">${active.initiativeRoll}</span>
                 </div>
-                <div class="pill-boot-speed" onclick="openSpeedModal('${c.id}')" title="Edit Speed">
-                  <span>🥾</span>
-                  <span>${c.speed}ft</span>
+                <div class="stat-squircle" onclick="openSpeedModal('${active.id}')" title="Edit Speed">
+                  <span class="stat-squircle-label">SPD</span>
+                  <span class="stat-squircle-val">${active.speed}ft</span>
                 </div>
-                <button class="btn-card-close" onclick="removeCombatant('${c.id}')" title="Remove">✕</button>
               </div>
             </div>
 
             <!-- HP Row & Quick Chips (-5, -1, +1, +5) -->
-            <div class="turn-hp-row" style="margin-bottom: 4px;">
-              <div class="hp-main-label" onclick="openDamageHealModal('${c.id}')">
+            <div class="turn-hp-row">
+              <div class="hp-main-label" onclick="openDamageHealModal('${active.id}')">
                 <span>HP:</span>
-                <span class="hp-current-num ${c.currentHp <= 3 ? "red" : c.currentHp <= 6 ? "low" : ""}">${c.currentHp}</span>
-                <span>/ ${c.maxHp}</span>
-                ${c.tempHp > 0 ? `<span class="temp-hp-pill-tag">🛡️ +${c.tempHp} Temp</span>` : ""}
+                <span class="hp-current-num ${active.currentHp <= 0 ? "red" : active.currentHp <= 3 ? "red" : active.currentHp <= 6 ? "low" : ""}">${active.currentHp}</span>
+                <span>/ ${active.maxHp}</span>
+                ${active.tempHp > 0 ? `
+                  <span class="temp-hp-pill-tag">🛡️ +${active.tempHp} Temp HP</span>
+                ` : ""}
               </div>
 
               <div class="quick-hp-chips-group">
-                <button class="chip-quick-hp dmg" onclick="applyDamage('${c.id}', 5)">-5</button>
-                <button class="chip-quick-hp dmg" onclick="applyDamage('${c.id}', 1)">-1</button>
-                <button class="chip-quick-hp heal" onclick="applyHealing('${c.id}', 1)">+1</button>
-                <button class="chip-quick-hp heal" onclick="applyHealing('${c.id}', 5)">+5</button>
+                <button class="chip-quick-hp dmg" onclick="applyDamage('${active.id}', 5)">-5</button>
+                <button class="chip-quick-hp dmg" onclick="applyDamage('${active.id}', 1)">-1</button>
+                <button class="chip-quick-hp heal" onclick="applyHealing('${active.id}', 1)">+1</button>
+                <button class="chip-quick-hp heal" onclick="applyHealing('${active.id}', 5)">+5</button>
               </div>
             </div>
 
-            <!-- HP Bar -->
-            <div class="unified-hp-bar" style="margin-bottom: 6px;" onclick="openDamageHealModal('${c.id}')">
-              <div class="unified-hp-fill ${c.currentHp <= 3 ? "red" : c.currentHp <= 6 ? "amber" : ""}" style="width: ${hpPercent}%;"></div>
-              ${c.tempHp > 0 ? `
-                <div class="unified-hp-temp" style="width: ${Math.min(100, (c.tempHp / (c.maxHp || 1)) * 100)}%;"></div>
+            <!-- HP Bar with Temp HP overlay -->
+            <div class="unified-hp-bar" onclick="openDamageHealModal('${active.id}')">
+              <div class="unified-hp-fill ${active.currentHp <= 0 ? "red" : active.currentHp <= 3 ? "red" : active.currentHp <= 6 ? "amber" : ""}" style="width: ${Math.min(100, Math.max(0, (active.currentHp / (active.maxHp || 1)) * 100))}%;"></div>
+              ${active.tempHp > 0 ? `
+                <div class="unified-hp-temp" style="width: ${Math.min(100, (active.tempHp / (active.maxHp || 1)) * 100)}%;"></div>
               ` : ""}
             </div>
 
-            <!-- Condition Badges & Chips -->
-            <div class="combatant-chips-row">
-              ${c.coverType && c.coverType !== "NONE" ? `
-                <span class="pill-cover-badge" onclick="openAcModal('${c.id}')">
-                  ${c.coverType === "HALF" ? "Half Cover" : c.coverType === "THREE_QUARTERS" ? "3/4 Cover" : "Total Cover"}
-                </span>
-              ` : ""}
-              ${c.isDifficultTerrain ? `
-                <span class="pill-terrain-badge" onclick="openSpeedModal('${c.id}')">
-                  Difficult Terrain
-                </span>
-              ` : ""}
-              ${(c.conditions || []).filter(cn => cn !== "half_cover" && cn !== "three_quarters_cover" && cn !== "total_cover" && cn !== "difficult_terrain").map(cn => {
-                const condObj = CONDITIONS.find(x => x.id === cn);
-                return condObj ? `<span class="pill-cover-badge" style="border-color:${condObj.color};" onclick="openConditionsModal('${c.id}')">${condObj.name}</span>` : "";
-              }).join("")}
-              <button class="btn-add-condition-chip" onclick="openConditionsModal('${c.id}')">+ Condition</button>
+            <!-- 3 Big Action Buttons (💥 Damage, 💚 Heal, ✨ Condition) -->
+            <div class="turn-action-buttons-row">
+              <button class="btn-turn-action damage" onclick="openDamageHealModal('${active.id}')">
+                <span>💥 Damage</span>
+              </button>
+              <button class="btn-turn-action heal" onclick="openDamageHealModal('${active.id}')">
+                <span>💚 Heal</span>
+              </button>
+              <button class="btn-turn-action condition" onclick="openConditionsModal('${active.id}')">
+                <span>✨ Condition</span>
+              </button>
             </div>
 
-            <!-- Scroll Note Snippet (if available) -->
-            ${c.notes ? `
-              <div class="scroll-note-snippet">
-                <span>📜</span>
-                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.notes}</span>
+            <!-- ACTIVE CONDITIONS IN CURRENT TURN BOX (Shows round timer number next to non-permanent conditions) -->
+            <div class="turn-conditions-row">
+              <div class="turn-conditions-header">
+                <span class="turn-conditions-title">
+                  <span>✨</span>
+                  <span>Active Conditions (${(active.conditions || []).length})</span>
+                </span>
+                <button class="btn-add-cond-mini" onclick="openConditionsModal('${active.id}')">+ Add Condition</button>
+              </div>
+              <div class="turn-conditions-chips">
+                ${(active.conditions && active.conditions.length > 0) ? active.conditions.map(cn => {
+                  const info = getConditionInfo(cn);
+                  if (!info) return "";
+                  const isTimed = info.duration && info.duration !== "permanent";
+                  const rounds = info.duration === "rounds" ? (info.roundsRemaining || 1) : 1;
+                  return `
+                    <span class="turn-cond-pill" style="border-color:${info.color}; color:${info.color};" onclick="openConditionsModal('${active.id}')" title="${info.desc}">
+                      <span>${info.name}</span>
+                      ${isTimed ? `<span class="turn-cond-timer-bubble" title="${info.duration === 'rounds' ? `${rounds} round(s) remaining` : info.timerLabel}">${rounds}</span>` : ""}
+                      <span class="turn-cond-remove" onclick="event.stopPropagation(); removeCombatantCondition('${active.id}', '${info.id}')" title="Remove condition">✕</span>
+                    </span>
+                  `;
+                }).join("") : `
+                  <span style="font-size: 11.5px; color: var(--text-subtle);">No conditions active on ${active.name}.</span>
+                `}
+              </div>
+            </div>
+
+            <!-- DEATH SAVING THROWS SECTION (Appears when HP <= 0 or in dying/stabilized state) -->
+            ${(active.currentHp <= 0 || active.isDead || active.isStabilized || active.deathSavesSuccess > 0 || active.deathSavesFailure > 0) ? `
+              <div class="death-saves-container">
+                <div class="death-saves-header">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:16px;">💀</span>
+                    <span style="font-size:13px; font-weight:800; color:#f87171; letter-spacing:0.5px;">DEATH SAVING THROWS</span>
+                  </div>
+                  <span class="death-saves-status-badge ${active.isDead ? 'dead' : active.isStabilized ? 'stabilized' : 'dying'}">
+                    ${active.isDead ? 'DEAD' : active.isStabilized ? 'STABILIZED' : 'DYING'}
+                  </span>
+                </div>
+
+                <div class="death-saves-rows">
+                  <div class="death-save-row">
+                    <span class="death-save-row-label" style="color:#34d399;">SUCCESSES</span>
+                    <div class="death-save-bubbles">
+                      <button class="death-bubble-btn ${active.deathSavesSuccess >= 1 ? 'checked-success' : ''}" onclick="toggleDeathSaveSuccess('${active.id}', 1)" title="Success 1">✓</button>
+                      <button class="death-bubble-btn ${active.deathSavesSuccess >= 2 ? 'checked-success' : ''}" onclick="toggleDeathSaveSuccess('${active.id}', 2)" title="Success 2">✓</button>
+                      <button class="death-bubble-btn ${active.deathSavesSuccess >= 3 ? 'checked-success' : ''}" onclick="toggleDeathSaveSuccess('${active.id}', 3)" title="Success 3">✓</button>
+                    </div>
+                  </div>
+
+                  <div class="death-save-row">
+                    <span class="death-save-row-label" style="color:#f87171;">FAILURES</span>
+                    <div class="death-save-bubbles">
+                      <button class="death-bubble-btn ${active.deathSavesFailure >= 1 ? 'checked-failure' : ''}" onclick="toggleDeathSaveFailure('${active.id}', 1)" title="Failure 1">✕</button>
+                      <button class="death-bubble-btn ${active.deathSavesFailure >= 2 ? 'checked-failure' : ''}" onclick="toggleDeathSaveFailure('${active.id}', 2)" title="Failure 2">✕</button>
+                      <button class="death-bubble-btn ${active.deathSavesFailure >= 3 ? 'checked-failure' : ''}" onclick="toggleDeathSaveFailure('${active.id}', 3)" title="Failure 3">✕</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="death-save-actions-row">
+                  <button class="btn-death-action roll" onclick="rollDeathSave('${active.id}')" ${active.isDead || active.isStabilized ? 'disabled' : ''}>
+                    🎲 Roll Save
+                  </button>
+                  <button class="btn-death-action stabilize" onclick="stabilizeCombatant('${active.id}')">
+                    ${active.isStabilized ? 'Unstabilize' : '💚 Stabilize'}
+                  </button>
+                  <button class="btn-death-action revive" onclick="reviveCombatant('${active.id}')">
+                    ✨ Revive (1 HP)
+                  </button>
+                  <button class="btn-death-action" onclick="resetDeathSaves('${active.id}')">
+                    🔄 Reset
+                  </button>
+                </div>
               </div>
             ` : ""}
+
+            <!-- ABILITIES & ACTIONS SECTION -->
+            <div class="abilities-section-card">
+              <div class="abilities-section-header">
+                <span>⚡</span>
+                <span>ABILITIES & ACTIONS</span>
+              </div>
+
+              <!-- Dynamic character ability rows -->
+              ${(active.abilities && active.abilities.length > 0) ? active.abilities.map(ab => `
+                <div class="ability-item-row">
+                  <div class="ability-title-line">
+                    <span class="ability-type-badge ${ab.type.toLowerCase().includes('bonus') ? 'bonus' : ab.type.toLowerCase().includes('feat') ? 'feat' : ab.type.toLowerCase().includes('reaction') ? 'reaction' : 'action'}">
+                      ${ab.type.toUpperCase()}
+                    </span>
+                    <span class="ability-name-bold">⚡ ${ab.name}</span>
+                  </div>
+                  <span class="ability-desc-text">${ab.description}</span>
+                </div>
+              `).join("") : (active.notes ? `
+                <div class="ability-item-row">
+                  <span class="ability-desc-text">📜 ${active.notes}</span>
+                </div>
+              ` : `
+                <div class="ability-item-row">
+                  <span class="ability-desc-text" style="color: var(--text-subtle);">No custom abilities specified for this character.</span>
+                </div>
+              `)}
+
+              <!-- 4 Equal Action Economy Boxes -->
+              <div class="action-economy-grid">
+                <div class="action-economy-box">
+                  <div class="action-economy-title" style="color: var(--color-gold);">
+                    <span>⚔️</span> Action
+                  </div>
+                  <span class="action-economy-desc">Attack, Cast, Dash, Disengage, Dodge, Help, Hide</span>
+                </div>
+                <div class="action-economy-box">
+                  <div class="action-economy-title" style="color: #34d399;">
+                    <span>⚡</span> Bonus
+                  </div>
+                  <span class="action-economy-desc">Bonus Spells, Offhand, Class feats</span>
+                </div>
+                <div class="action-economy-box">
+                  <div class="action-economy-title" style="color: #60a5fa;">
+                    <span>🛡️</span> Reaction
+                  </div>
+                  <span class="action-economy-desc">Opportunity Attack, Shield, Counter</span>
+                </div>
+                <div class="action-economy-box">
+                  <div class="action-economy-title" style="color: #f1f5f9;">
+                    <span>👟</span> Move
+                  </div>
+                  <span class="action-economy-desc">${active ? active.speed : 30}ft Speed (Walk, climb, swim)</span>
+                </div>
+              </div>
+            </div>
           </div>
-        `;
-      }).join("")}
+        ` : `
+          <div class="prep-status-banner">
+            <span style="font-size: 20px;">🛡️</span>
+            <div>
+              <strong style="color: var(--color-gold-light); display: block; margin-bottom: 2px;">Encounter in Preparation</strong>
+              <span>Adjust combatant stats, initiatives, or HP below. Press <strong>Start Combat</strong> above when ready to begin Round 1.</span>
+            </div>
+          </div>
+        `}
+      </div>
+
+      <!-- RIGHT COLUMN ON PC (Initiative Order & Combatants) -->
+      <div class="desktop-combat-right">
+        ${combatants.length === 0 ? `
+          <div class="dialog-inner-card" style="margin: 0 0 14px 0; text-align: center; padding: 24px 16px; align-items: center;">
+            <span style="font-size: 32px;">⚔️</span>
+            <span style="font-size: 16px; font-weight: 800; color: var(--color-gold); margin-top: 6px;">No Combatants in Arena</span>
+            <p style="font-size: 12px; color: var(--text-muted); max-width: 320px; margin: 6px 0 16px 0;">Add your party members or spawn monsters from the SRD bestiary to assemble the encounter.</p>
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 280px;">
+              <button class="btn-prep-action solid-gold" onclick="addAllPartyToEncounter()">Add Entire Party</button>
+              <button class="btn-prep-action outline-gold" onclick="store.currentTab = 'bestiary'; renderApp();">Browse Bestiary</button>
+              <button class="btn-prev-turn" style="height: 42px; width: 100%; border-radius: 12px;" onclick="openAddEnemyModal()">+ Add Custom Monster</button>
+            </div>
+          </div>
+        ` : ""}
+
+        <!-- INITIATIVE ORDER SECTION -->
+        <div class="initiative-section-header">
+          <span class="initiative-title">INITIATIVE ORDER (${combatants.length})</span>
+          <div class="initiative-header-actions">
+            <button class="btn-header-link gold" onclick="openPartyInitiativesModal()">
+              <span>🎲 Party Inits</span>
+            </button>
+            <button class="btn-header-link crimson" onclick="rollMonstersInitiative()">
+              <span>🔄 Roll Monsters</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Combatant List Cards -->
+        <div class="combatants-list-container">
+          ${combatants.map((c, index) => {
+            const isActiveCard = enc.isCombatStarted && index === enc.currentTurnIndex;
+            const isOnDeckCard = enc.isCombatStarted && combatants.length > 1 && index === ((enc.currentTurnIndex + 1) % combatants.length);
+            const hpPercent = Math.min(100, Math.max(0, (c.currentHp / (c.maxHp || 1)) * 100));
+
+            return `
+              <div class="combatant-list-card ${isActiveCard ? "active-turn" : ""} ${c.isDead ? "is-dead" : ""}" id="c-card-${c.id}">
+                <!-- Top Row: Circular Init, Name, Sub, AC Shield, Boot Speed, Remove X -->
+                <div class="combatant-card-top-row">
+                  <div class="circular-init-badge" onclick="openInitModal('${c.id}')" title="Edit Initiative">
+                    <span class="circular-init-num">${c.initiativeRoll}</span>
+                    <span class="circular-init-label">INIT</span>
+                  </div>
+
+                  <div class="combatant-info-group">
+                    <div class="combatant-name-and-badges">
+                      <span class="combatant-list-name">${c.name}</span>
+                      ${isOnDeckCard ? `<span class="badge-on-deck">ON DECK</span>` : ""}
+                    </div>
+                    <span class="combatant-list-sub">${c.characterClassOrType}</span>
+                  </div>
+
+                  <div class="combatant-right-pills">
+                    <div class="pill-shield-ac" onclick="openAcModal('${c.id}')" title="Edit AC">
+                      <span>🛡️</span>
+                      <span>${c.armorClass}</span>
+                    </div>
+                    <div class="pill-boot-speed" onclick="openSpeedModal('${c.id}')" title="Edit Speed">
+                      <span>🥾</span>
+                      <span>${c.speed}ft</span>
+                    </div>
+                    <button class="btn-card-close" onclick="removeCombatant('${c.id}')" title="Remove">✕</button>
+                  </div>
+                </div>
+
+                <!-- HP Row & Quick Chips (-5, -1, +1, +5) -->
+                <div class="turn-hp-row" style="margin-bottom: 4px;">
+                  <div class="hp-main-label" onclick="openDamageHealModal('${c.id}')">
+                    <span>HP:</span>
+                    <span class="hp-current-num ${c.currentHp <= 0 ? "red" : c.currentHp <= 3 ? "red" : c.currentHp <= 6 ? "low" : ""}">${c.currentHp}</span>
+                    <span>/ ${c.maxHp}</span>
+                    ${c.tempHp > 0 ? `<span class="temp-hp-pill-tag">🛡️ +${c.tempHp} Temp</span>` : ""}
+                  </div>
+
+                  <div class="quick-hp-chips-group">
+                    <button class="chip-quick-hp dmg" onclick="applyDamage('${c.id}', 5)">-5</button>
+                    <button class="chip-quick-hp dmg" onclick="applyDamage('${c.id}', 1)">-1</button>
+                    <button class="chip-quick-hp heal" onclick="applyHealing('${c.id}', 1)">+1</button>
+                    <button class="chip-quick-hp heal" onclick="applyHealing('${c.id}', 5)">+5</button>
+                  </div>
+                </div>
+
+                <!-- HP Bar -->
+                <div class="unified-hp-bar" style="margin-bottom: 6px;" onclick="openDamageHealModal('${c.id}')">
+                  <div class="unified-hp-fill ${c.currentHp <= 0 ? "red" : c.currentHp <= 3 ? "red" : c.currentHp <= 6 ? "amber" : ""}" style="width: ${hpPercent}%;"></div>
+                  ${c.tempHp > 0 ? `
+                    <div class="unified-hp-temp" style="width: ${Math.min(100, (c.tempHp / (c.maxHp || 1)) * 100)}%;"></div>
+                  ` : ""}
+                </div>
+
+                <!-- Death Saves Mini Row (If HP <= 0) -->
+                ${(c.currentHp <= 0 || c.isDead || c.isStabilized || c.deathSavesSuccess > 0 || c.deathSavesFailure > 0) ? `
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; padding:6px 10px; background:rgba(220,38,38,0.12); border-radius:8px; border:1px solid rgba(239,68,68,0.35);">
+                    <span class="death-saves-status-badge ${c.isDead ? 'dead' : c.isStabilized ? 'stabilized' : 'dying'}">
+                      ${c.isDead ? '💀 DEAD' : c.isStabilized ? '💚 STABILIZED' : `💀 DYING (${c.deathSavesSuccess || 0}S / ${c.deathSavesFailure || 0}F)`}
+                    </span>
+                    <div style="display:flex; gap:4px;">
+                      ${(!c.isDead && !c.isStabilized) ? `
+                        <button class="btn-death-action roll" style="height:26px; font-size:10.5px; padding:0 8px;" onclick="rollDeathSave('${c.id}')">🎲 Roll Save</button>
+                      ` : ""}
+                      <button class="btn-death-action revive" style="height:26px; font-size:10.5px; padding:0 8px;" onclick="reviveCombatant('${c.id}')">✨ Revive</button>
+                    </div>
+                  </div>
+                ` : ""}
+
+                <!-- Condition Badges & Chips -->
+                <div class="combatant-chips-row">
+                  ${c.coverType && c.coverType !== "NONE" ? `
+                    <span class="pill-cover-badge" onclick="openAcModal('${c.id}')">
+                      ${c.coverType === "HALF" ? "Half Cover" : c.coverType === "THREE_QUARTERS" ? "3/4 Cover" : "Total Cover"}
+                    </span>
+                  ` : ""}
+                  ${c.isDifficultTerrain ? `
+                    <span class="pill-terrain-badge" onclick="openSpeedModal('${c.id}')">
+                      Difficult Terrain
+                    </span>
+                  ` : ""}
+                  ${(c.conditions || []).filter(cn => {
+                    const cid = typeof cn === 'string' ? cn : cn.id;
+                    return cid !== "half_cover" && cid !== "three_quarters_cover" && cid !== "total_cover" && cid !== "difficult_terrain";
+                  }).map(cn => {
+                    const info = getConditionInfo(cn);
+                    if (!info) return "";
+                    const isTimed = info.duration && info.duration !== "permanent";
+                    const rounds = info.duration === "rounds" ? (info.roundsRemaining || 1) : 1;
+                    const roundBadge = isTimed ? ` <span class="turn-cond-timer-bubble" style="margin-left:4px;" title="${info.duration === 'rounds' ? `${rounds} rounds left` : info.timerLabel}">${rounds}</span>` : "";
+                    return `<span class="pill-cover-badge" style="border-color:${info.color};" onclick="openConditionsModal('${c.id}')">${info.name}${roundBadge}</span>`;
+                  }).join("")}
+                  <button class="btn-add-condition-chip" onclick="openConditionsModal('${c.id}')">+ Condition</button>
+                </div>
+
+                <!-- Scroll Note Snippet (if available) -->
+                ${c.notes ? `
+                  <div class="scroll-note-snippet">
+                    <span>📜</span>
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${c.notes}</span>
+                  </div>
+                ` : ""}
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
     </div>
   `;
 }
@@ -936,10 +1325,10 @@ function renderPartyScreen() {
   const party = store.party;
 
   return `
-    <div style="padding: 12px 14px;">
+    <div style="padding: 14px 16px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
         <div>
-          <h2 style="font-size: 18px; font-weight: 800; color: var(--color-gold);">PARTY ROSTER</h2>
+          <h2 style="font-size: 19px; font-weight: 800; color: var(--color-gold);">PARTY ROSTER</h2>
           <span style="font-size: 12px; color: var(--text-muted);">Persistent heroes saved for repeated encounters (${party.length})</span>
         </div>
         <button class="btn-dialog-save" style="padding: 8px 16px; font-size: 13px;" onclick="addAllPartyToEncounter()">
@@ -947,7 +1336,7 @@ function renderPartyScreen() {
         </button>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div class="party-grid">
         ${party.map(p => `
           <div class="combatant-list-card" style="margin: 0;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -998,7 +1387,7 @@ function renderPartyScreen() {
         `).join("")}
       </div>
 
-      <button class="btn-next-turn" style="width: 100%; margin-top: 14px;" onclick="openCharacterModal(null)">
+      <button class="btn-next-turn" style="width: 100%; max-width: 400px; margin: 20px auto 0 auto; display: flex;" onclick="openCharacterModal(null)">
         + Add New Player Character
       </button>
     </div>
@@ -1006,39 +1395,195 @@ function renderPartyScreen() {
 }
 
 // ------------------------------------------
-// BESTIARY SCREEN
+// BESTIARY SCREEN (SRD & Custom, Multi-Select, Sorting & Squircles)
 // ------------------------------------------
 function renderBestiaryScreen() {
+  const query = (store.bestiarySearchQuery || "").toLowerCase().trim();
+  const selectedType = store.bestiarySelectedType || "All";
+  const sortBy = store.bestiarySortBy || "name";
+
+  const allMonsters = getAllBestiaryMonsters();
+  const customCount = (store.customBestiaryMonsters || []).length;
+
+  const types = ["All", "Humanoid", "Undead", "Beast", "Giant", "Dragon", "Aberration", "Monstrosity", "Fiend", "Construct", "Elemental", "Fey", "Celestial", "Ooze", "Plant"];
+
+  // Filter
+  let filtered = allMonsters.filter(m => {
+    const matchesType = (selectedType === "All") || (m.type.toLowerCase() === selectedType.toLowerCase());
+    const matchesQuery = !query || 
+      m.name.toLowerCase().includes(query) || 
+      m.type.toLowerCase().includes(query) || 
+      m.cr.toLowerCase().includes(query) || 
+      (m.notes && m.notes.toLowerCase().includes(query));
+    return matchesType && matchesQuery;
+  });
+
+  // Helper for CR value
+  function parseCr(crStr) {
+    if (crStr.includes("1/8")) return 0.125;
+    if (crStr.includes("1/4")) return 0.25;
+    if (crStr.includes("1/2")) return 0.5;
+    const num = parseInt(crStr.replace(/[^0-9]/g, ""), 10);
+    return isNaN(num) ? 0 : num;
+  }
+
+  // Sort by Monster Type, CR, Name, or HP
+  filtered.sort((a, b) => {
+    if (sortBy === "type") return a.type.localeCompare(b.type) || a.name.localeCompare(b.name);
+    if (sortBy === "name") return a.name.localeCompare(b.name);
+    if (sortBy === "cr_asc") return parseCr(a.cr) - parseCr(b.cr) || a.name.localeCompare(b.name);
+    if (sortBy === "cr_desc") return parseCr(b.cr) - parseCr(a.cr) || a.name.localeCompare(b.name);
+    if (sortBy === "hp") return b.maxHp - a.maxHp;
+    return 0;
+  });
+
+  // Selected totals
+  const selectedNames = Object.keys(store.bestiarySelectedMonsters || {}).filter(k => store.bestiarySelectedMonsters[k]);
+  const totalSelectedFoes = selectedNames.reduce((sum, name) => sum + ((store.bestiaryQuantities && store.bestiaryQuantities[name]) || 1), 0);
+
   return `
-    <div style="padding: 12px 14px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h2 style="font-size: 18px; font-weight: 800; color: var(--color-gold);">BESTIARY (SRD)</h2>
-        <button class="btn-dialog-save" style="padding: 6px 14px; font-size: 12px;" onclick="openAddEnemyModal()">
+    <div class="bestiary-screen-container">
+      <!-- Top Header -->
+      <div class="bestiary-top-header">
+        <div class="bestiary-title-group">
+          <div class="bestiary-main-title">
+            <span>🐉</span>
+            <span>5E BESTIARY</span>
+          </div>
+          <span class="bestiary-subtitle">SRD & Custom Monsters • Multi-select & library deployment (${filtered.length} shown${customCount > 0 ? ` • ${customCount} custom` : ''})</span>
+        </div>
+        <button class="btn-custom-monster" onclick="openCustomMonsterModal()">
           + Custom Monster
         </button>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        ${MONSTER_PRESETS.map(m => `
-          <div class="combatant-list-card" style="margin: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <span style="font-size: 16px; font-weight: 800; color: #fff;">${m.name}</span>
-                <div style="font-size: 12px; color: var(--text-muted);">${m.cr} &bull; ${m.type}</div>
-              </div>
-              <button class="btn-prev-turn" style="height: 34px; padding: 0 12px; border-radius: 8px;" onclick="spawnMonster('${m.name}')">
-                + Spawn
-              </button>
+      <!-- Batch Deployment Bar (Shown when multiple selected) -->
+      ${selectedNames.length > 0 ? `
+        <div class="bestiary-batch-bar">
+          <div class="bestiary-batch-info">
+            <span style="font-size: 20px;">⚔️</span>
+            <div>
+              <div><strong>${selectedNames.length} Monster Type${selectedNames.length > 1 ? 's' : ''} Selected</strong></div>
+              <span style="font-size: 11.5px; opacity: 0.9;">Total ${totalSelectedFoes} foes ready for combat</span>
             </div>
-            <div style="display: flex; gap: 6px; margin-top: 6px;">
-              <span class="pill-shield-ac">AC ${m.ac}</span>
-              <span class="pill-boot-speed">${m.maxHp} HP</span>
-              <span class="pill-shield-ac" style="color:#fcd34d;">Init +${m.initMod}</span>
-              <span class="pill-boot-speed">${m.speed}ft</span>
-            </div>
-            ${m.notes ? `<div class="scroll-note-snippet" style="margin-top:6px;"><span>⚔️</span> <span>${m.notes}</span></div>` : ""}
           </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-dialog-cancel" style="padding: 6px 12px; font-size: 12px;" onclick="clearBestiarySelections()">Clear</button>
+            <button class="btn-deploy-combat" style="height: 38px; padding: 0 16px;" onclick="deploySelectedBestiaryMonsters()">
+              Deploy All (${totalSelectedFoes}) ➔
+            </button>
+          </div>
+        </div>
+      ` : ""}
+
+      <!-- Search & Controls Bar -->
+      <div class="bestiary-controls-bar">
+        <div class="bestiary-search-container" style="flex: 1; min-width: 200px;">
+          <span class="bestiary-search-icon">🔍</span>
+          <input type="text" class="bestiary-search-input" placeholder="Search by monster name, type, CR, or traits..." value="${store.bestiarySearchQuery || ""}" oninput="setBestiarySearch(this.value)">
+        </div>
+        <select class="bestiary-sort-select" onchange="setBestiarySort(this.value)">
+          <option value="type" ${sortBy === 'type' ? 'selected' : ''}>Sort by: Monster Type</option>
+          <option value="name" ${sortBy === 'name' ? 'selected' : ''}>Sort by: Name (A-Z)</option>
+          <option value="cr_asc" ${sortBy === 'cr_asc' ? 'selected' : ''}>Sort by: CR (Low to High)</option>
+          <option value="cr_desc" ${sortBy === 'cr_desc' ? 'selected' : ''}>Sort by: CR (High to Low)</option>
+          <option value="hp" ${sortBy === 'hp' ? 'selected' : ''}>Sort by: Max HP</option>
+        </select>
+      </div>
+
+      <!-- Monster Type Filter Chips (Horizontal scrollable) -->
+      <div class="monster-type-chips-row">
+        ${types.map(t => `
+          <button class="monster-type-chip ${selectedType === t ? 'active' : ''}" onclick="setBestiaryTypeFilter('${t}')">
+            ${t === 'All' ? 'All Types' : t}
+          </button>
         `).join("")}
+      </div>
+
+      <!-- Monster Cards Grid (Responsive 1-col on mobile, multi-col on PC) -->
+      <div class="bestiary-cards-grid">
+        ${filtered.map(m => {
+          const qty = (store.bestiaryQuantities && store.bestiaryQuantities[m.name]) || 1;
+          const isSelected = !!(store.bestiarySelectedMonsters && store.bestiarySelectedMonsters[m.name]);
+          const isCustom = !!m.isCustom;
+
+          return `
+            <div class="bestiary-monster-card" style="${isSelected ? 'border-color: #f43f5e; box-shadow: 0 0 16px rgba(244, 63, 94, 0.35);' : ''}">
+              <!-- Top Row: Checkbox, Name, Type, CR Badge, Edit/Del for custom -->
+              <div class="bestiary-card-top-row">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                  <label class="bestiary-card-select-box" title="Select for multi-enemy deployment">
+                    <input type="checkbox" class="bestiary-checkbox" ${isSelected ? 'checked' : ''} onchange="toggleBestiaryMonsterSelected('${m.name}')">
+                  </label>
+                  <div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                      <span class="bestiary-card-name">${m.name}</span>
+                      ${isCustom ? `<span class="custom-monster-badge">⭐ Custom</span>` : ""}
+                    </div>
+                    <div class="bestiary-card-type">${m.type} • ${isCustom ? 'Custom Library' : '5e SRD'}</div>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span class="bestiary-cr-badge">${m.cr}</span>
+                  ${isCustom ? `
+                    <button class="btn-card-action-mini" onclick="event.stopPropagation(); openCustomMonsterModal('${m.name}')" title="Edit monster in library">✏️</button>
+                    <button class="btn-card-action-mini del" onclick="event.stopPropagation(); deleteCustomMonsterFromLibrary('${m.name}')" title="Delete from library">🗑️</button>
+                  ` : ""}
+                </div>
+              </div>
+
+              <!-- Squircles Row (AC, HP, INIT, SPD, PERC, DC) -->
+              <div class="bestiary-squircles-row">
+                <div class="bestiary-squircle">
+                  <span class="bestiary-squircle-label">AC</span>
+                  <span class="bestiary-squircle-val">${m.ac}</span>
+                </div>
+                <div class="bestiary-squircle">
+                  <span class="bestiary-squircle-label">HP</span>
+                  <span class="bestiary-squircle-val">${m.maxHp}</span>
+                </div>
+                <div class="bestiary-squircle">
+                  <span class="bestiary-squircle-label">INIT</span>
+                  <span class="bestiary-squircle-val" style="color: #fcd34d;">+${m.initMod}</span>
+                </div>
+                <div class="bestiary-squircle">
+                  <span class="bestiary-squircle-label">SPD</span>
+                  <span class="bestiary-squircle-val">${m.speed}ft</span>
+                </div>
+                <div class="bestiary-squircle">
+                  <span class="bestiary-squircle-label">PERC</span>
+                  <span class="bestiary-squircle-val">${m.perception || 10}</span>
+                </div>
+                ${m.spellDc ? `
+                  <div class="bestiary-squircle" style="border-color:#a855f7;">
+                    <span class="bestiary-squircle-label" style="color:#c084fc;">DC</span>
+                    <span class="bestiary-squircle-val" style="color:#e9d5ff;">${m.spellDc}</span>
+                  </div>
+                ` : ""}
+              </div>
+
+              <!-- Traits & Attacks Note -->
+              ${m.notes ? `
+                <div class="bestiary-notes-text">
+                  <span>⚔️ ${m.notes}</span>
+                </div>
+              ` : ""}
+
+              <!-- Bottom Row: Quantity Stepper & Deploy Button -->
+              <div class="bestiary-card-bottom-row">
+                <div class="bestiary-qty-control">
+                  <span>Qty:</span>
+                  <button class="bestiary-stepper-btn" onclick="adjustBestiaryQuantity('${m.name}', -1)">−</button>
+                  <span class="bestiary-qty-num">${qty}</span>
+                  <button class="bestiary-stepper-btn" onclick="adjustBestiaryQuantity('${m.name}', 1)">+</button>
+                </div>
+                <button class="btn-deploy-combat" onclick="spawnMonsterWithQty('${m.name}', ${qty})">
+                  Deploy ${qty > 1 ? `(${qty}) ` : ""}to Combat
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("")}
       </div>
     </div>
   `;
@@ -1082,217 +1627,282 @@ function renderDiceScreen() {
       </div>
 
       ${subTab === "roller" ? `
-        <!-- Roller View Mode Switcher: Single Die vs Mixed Pool -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
-          <span style="font-size: 11px; font-weight: 800; color: var(--color-gold); text-transform: uppercase; letter-spacing: 0.5px;">
-            ${inputMode === "standard" ? "Dice Selector & Modifier" : "Multi-Dice Custom Pool Tray"}
-          </span>
-          <button class="btn-header-link gold" style="font-size: 11.5px;" onclick="store.diceInputMode = store.diceInputMode === 'standard' ? 'tray' : 'standard'; renderApp();">
-            ${inputMode === "standard" ? "Switch to Mixed Dice Tray ➔" : "➔ Switch to Standard Die"}
-          </button>
+        <!-- ACTIVE ROLL RESULT SPOTLIGHT CARD (Above the dice selector) -->
+        <div class="top-dice-result-container">
+          ${last ? `
+            <div class="roll-result-card ${last.isNat20 ? 'nat20' : last.isNat1 ? 'nat1' : ''}">
+              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 2px;">
+                <span style="font-size: 11.5px; font-weight: 800; letter-spacing: 1px; color: ${last.isNat20 ? '#34d399' : last.isNat1 ? '#ef4444' : 'var(--color-gold)'}; text-transform: uppercase;">
+                  ${last.isNat20 ? '🌟 NATURAL 20! CRITICAL HIT!' : last.isNat1 ? '💀 NATURAL 1! CRITICAL FUMBLE!' : 'LATEST ROLL RESULT'}
+                </span>
+                <span style="font-size: 11px; color: var(--text-subtle);">${last.timestamp || "Just now"}</span>
+              </div>
+
+              <div class="roll-total-num ${last.isNat20 ? 'green' : last.isNat1 ? 'red' : ''}">
+                ${last.total}
+              </div>
+
+              <div style="font-size: 14px; font-weight: 800; color: var(--text-white); margin-bottom: 4px;">
+                ${last.formula}
+              </div>
+
+              <!-- Dice Individual Badges -->
+              ${last.rolls && last.rolls.length > 0 ? `
+                <div class="dice-breakdown-chips-row">
+                  ${last.rolls.map((r, idx) => `
+                    <span class="die-result-pill ${r.dropped ? 'dropped' : ''} ${r.value === 20 && last.sides === 20 ? 'crit' : r.value === 1 && last.sides === 20 ? 'fumble' : ''}">
+                      ${r.label || `Die ${idx+1}`}: ${r.value}${r.dropped ? ' (dropped)' : ''}
+                    </span>
+                  `).join("")}
+                  ${last.modifier !== 0 ? `
+                    <span class="die-result-pill" style="border-color: var(--color-gold); color: var(--color-gold-light);">
+                      Mod: ${last.modifier > 0 ? `+${last.modifier}` : last.modifier}
+                    </span>
+                  ` : ""}
+                </div>
+              ` : ""}
+
+              <div class="roll-breakdown-details">
+                ${last.calculation || `Total: ${last.total}`}
+              </div>
+            </div>
+          ` : `
+            <div class="dialog-inner-card" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 16px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 24px;">🎲</span>
+                <div>
+                  <strong style="color: var(--color-gold); font-size: 14px; display: block;">Ready to Roll</strong>
+                  <span style="font-size: 11.5px; color: var(--text-muted);">Pick dice below or tap any preset to roll</span>
+                </div>
+              </div>
+              <button class="quick-chip selected" style="padding: 6px 14px; font-weight: 800;" onclick="quickRollPreset('d20_check')">Quick d20</button>
+            </div>
+          `}
         </div>
 
-        ${inputMode === "standard" ? `
-          <!-- STANDARD MULTI-DICE MODE -->
-          <div class="dialog-inner-card">
-            <!-- Polyhedral Dice Grid -->
-            <span class="dialog-inner-title">1. Select Die Type</span>
-            <div class="dice-selector-grid">
-              ${diceOptions.map(s => `
-                <button class="die-select-btn ${sides === s ? 'selected' : ''}" onclick="selectDieType(${s})">
-                  <span class="die-select-name">d${s === 100 ? '%' : s}</span>
-                  <span class="die-select-badge">${s === 20 ? 'Standard' : s === 100 ? 'Percent' : `${s}-sided`}</span>
-                </button>
-              `).join("")}
+        <div class="desktop-dice-layout">
+          <!-- LEFT COLUMN: CONTROLS & PRESETS -->
+          <div class="desktop-dice-left">
+            <!-- Roller View Mode Switcher: Single Die vs Mixed Pool -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--color-gold); text-transform: uppercase; letter-spacing: 0.5px;">
+                ${inputMode === "standard" ? "Dice Selector & Modifier" : "Multi-Dice Custom Pool Tray"}
+              </span>
+              <button class="btn-header-link gold" style="font-size: 11.5px;" onclick="store.diceInputMode = store.diceInputMode === 'standard' ? 'tray' : 'standard'; renderApp();">
+                ${inputMode === "standard" ? "Switch to Mixed Dice Tray ➔" : "➔ Switch to Standard Die"}
+              </button>
             </div>
 
-            <!-- Dice Count Stepper & Quick Chips -->
-            <div style="margin-top: 8px;">
-              <span class="dialog-inner-title">2. Number of Dice (Count)</span>
-              <div class="dice-stepper-row" style="margin-top: 4px;">
-                <div class="dice-stepper-group">
-                  <button class="btn-dice-stepper" onclick="adjustDiceCount(-1)">−</button>
-                  <input type="number" class="dice-num-box" min="1" max="50" value="${count}" onchange="setDiceCount(parseInt(this.value, 10) || 1)">
-                  <button class="btn-dice-stepper" onclick="adjustDiceCount(1)">+</button>
-                </div>
-                <div class="quick-chips-row">
-                  ${[1, 2, 3, 4, 6, 8, 10, 12, 20].map(c => `
-                    <button class="quick-chip ${count === c ? 'selected' : ''}" onclick="setDiceCount(${c})">${c}x</button>
+            ${inputMode === "standard" ? `
+              <!-- STANDARD MULTI-DICE MODE -->
+              <div class="dialog-inner-card">
+                <!-- Polyhedral Dice Grid -->
+                <span class="dialog-inner-title">1. Select Die Type</span>
+                <div class="dice-selector-grid">
+                  ${diceOptions.map(s => `
+                    <button class="die-select-btn ${sides === s ? 'selected' : ''}" onclick="selectDieType(${s})">
+                      <span class="die-select-name">d${s === 100 ? '%' : s}</span>
+                      <span class="die-select-badge">${s === 20 ? 'Standard' : s === 100 ? 'Percent' : `${s}-sided`}</span>
+                    </button>
                   `).join("")}
                 </div>
-              </div>
-            </div>
 
-            <!-- Modifier Stepper & Quick Chips -->
-            <div style="margin-top: 10px;">
-              <span class="dialog-inner-title">3. Add Modifier (End of Roll)</span>
-              <div class="dice-stepper-row" style="margin-top: 4px;">
-                <div class="dice-stepper-group">
-                  <button class="btn-dice-stepper" onclick="adjustDiceModifier(-1)">−</button>
-                  <input type="number" class="dice-num-box" value="${mod}" onchange="setDiceModifier(parseInt(this.value, 10) || 0)">
-                  <button class="btn-dice-stepper" onclick="adjustDiceModifier(1)">+</button>
-                </div>
-                <div class="quick-chips-row">
-                  ${[-5, -2, -1, 0, 1, 2, 3, 4, 5, 7, 10].map(m => `
-                    <button class="quick-chip ${mod === m ? 'selected' : ''}" onclick="setDiceModifier(${m})">${m >= 0 ? `+${m}` : m}</button>
-                  `).join("")}
-                </div>
-              </div>
-            </div>
-
-            <!-- Advantage / Disadvantage (if 1d20) -->
-            ${(sides === 20 && count === 1) ? `
-              <div style="margin-top: 10px;">
-                <span class="dialog-inner-title">d20 Advantage / Disadvantage</span>
-                <div style="display: flex; gap: 6px; margin-top: 4px;">
-                  <button class="quick-chip ${mode === 'NORMAL' ? 'selected' : ''}" style="flex:1; padding: 7px 0; text-align: center;" onclick="setDiceRollMode('NORMAL')">Normal</button>
-                  <button class="quick-chip ${mode === 'ADVANTAGE' ? 'selected' : ''}" style="flex:1; padding: 7px 0; text-align: center;" onclick="setDiceRollMode('ADVANTAGE')">Advantage (Take High)</button>
-                  <button class="quick-chip ${mode === 'DISADVANTAGE' ? 'selected' : ''}" style="flex:1; padding: 7px 0; text-align: center;" onclick="setDiceRollMode('DISADVANTAGE')">Disadvantage (Take Low)</button>
-                </div>
-              </div>
-            ` : ""}
-
-            <!-- PRIMARY ROLL BUTTON -->
-            <button class="btn-prep-action solid-gold" style="margin-top: 14px; height: 52px; font-size: 16px;" onclick="rollConfiguredDice()">
-              <span>🎲</span>
-              <span>ROLL ${count}d${sides === 100 ? '%' : sides} ${modStr ? ` ${modStr}` : ""} ${mode === 'ADVANTAGE' ? '(Adv)' : mode === 'DISADVANTAGE' ? '(Disadv)' : ''}</span>
-            </button>
-          </div>
-        ` : `
-          <!-- MIXED DICE POOL TRAY MODE (Mix Multiple Dice Types) -->
-          <div class="dialog-inner-card">
-            <span class="dialog-inner-title">Custom Multi-Dice Pool Builder</span>
-            <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px;">
-              Add any combination of dice into your tray (e.g. 2d6 + 1d8 + 3). Tap + / − to adjust dice.
-            </p>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px;">
-              ${diceOptions.map(s => {
-                const qty = (store.diceTray && store.diceTray[s]) || 0;
-                return `
-                  <div style="background: var(--bg-card-darker); border: 1.5px solid ${qty > 0 ? 'var(--color-gold)' : 'var(--border-card)'}; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; align-items: center;">
-                    <strong style="color: ${qty > 0 ? 'var(--color-gold-light)' : '#fff'}; font-size: 14px;">d${s === 100 ? '%' : s}</strong>
-                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
-                      <button class="btn-dice-stepper" style="width: 26px; height: 26px; font-size: 14px;" onclick="adjustTrayDie(${s}, -1)">−</button>
-                      <span style="font-weight: 800; font-size: 14px; min-width: 18px; text-align: center; color: ${qty > 0 ? 'var(--color-gold)' : 'var(--text-muted)'};">${qty}</span>
-                      <button class="btn-dice-stepper" style="width: 26px; height: 26px; font-size: 14px;" onclick="adjustTrayDie(${s}, 1)">+</button>
+                <!-- Dice Count Stepper & Quick Chips -->
+                <div style="margin-top: 8px;">
+                  <span class="dialog-inner-title">2. Number of Dice (Count)</span>
+                  <div class="dice-stepper-row" style="margin-top: 4px;">
+                    <div class="dice-stepper-group">
+                      <button class="btn-dice-stepper" onclick="adjustDiceCount(-1)">−</button>
+                      <input type="number" class="dice-num-box" min="1" max="50" value="${count}" onchange="setDiceCount(parseInt(this.value, 10) || 1)">
+                      <button class="btn-dice-stepper" onclick="adjustDiceCount(1)">+</button>
+                    </div>
+                    <div class="quick-chips-row">
+                      ${[1, 2, 3, 4, 6, 8, 10, 12, 20].map(c => `
+                        <button class="quick-chip ${count === c ? 'selected' : ''}" onclick="setDiceCount(${c})">${c}x</button>
+                      `).join("")}
                     </div>
                   </div>
-                `;
-              }).join("")}
-            </div>
-
-            <!-- Active Tray Preview Bar -->
-            <div class="dice-tray-preview-bar" style="margin-top: 12px;">
-              <div>
-                <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Active Tray Formula</span>
-                <span class="dice-tray-formula-text">${trayFormula}</span>
-              </div>
-              <button class="btn-header-link crimson" style="font-size: 12px;" onclick="clearDiceTray()">Clear Tray</button>
-            </div>
-
-            <!-- Modifier Stepper for Tray -->
-            <div style="margin-top: 10px;">
-              <span class="dialog-inner-title">Add Modifier to Tray Total</span>
-              <div class="dice-stepper-row" style="margin-top: 4px;">
-                <div class="dice-stepper-group">
-                  <button class="btn-dice-stepper" onclick="adjustDiceModifier(-1)">−</button>
-                  <input type="number" class="dice-num-box" value="${mod}" onchange="setDiceModifier(parseInt(this.value, 10) || 0)">
-                  <button class="btn-dice-stepper" onclick="adjustDiceModifier(1)">+</button>
                 </div>
-                <div class="quick-chips-row">
-                  ${[-5, -2, -1, 0, 1, 2, 3, 4, 5, 7, 10].map(m => `
-                    <button class="quick-chip ${mod === m ? 'selected' : ''}" onclick="setDiceModifier(${m})">${m >= 0 ? `+${m}` : m}</button>
+
+                <!-- Modifier Stepper & Quick Chips -->
+                <div style="margin-top: 10px;">
+                  <span class="dialog-inner-title">3. Add Modifier (End of Roll)</span>
+                  <div class="dice-stepper-row" style="margin-top: 4px;">
+                    <div class="dice-stepper-group">
+                      <button class="btn-dice-stepper" onclick="adjustDiceModifier(-1)">−</button>
+                      <input type="number" class="dice-num-box" value="${mod}" onchange="setDiceModifier(parseInt(this.value, 10) || 0)">
+                      <button class="btn-dice-stepper" onclick="adjustDiceModifier(1)">+</button>
+                    </div>
+                    <div class="quick-chips-row">
+                      ${[-5, -2, -1, 0, 1, 2, 3, 4, 5, 7, 10].map(m => `
+                        <button class="quick-chip ${mod === m ? 'selected' : ''}" onclick="setDiceModifier(${m})">${m >= 0 ? `+${m}` : m}</button>
+                      `).join("")}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Advantage / Disadvantage (if 1d20) -->
+                ${(sides === 20 && count === 1) ? `
+                  <div style="margin-top: 10px;">
+                    <span class="dialog-inner-title">d20 Advantage / Disadvantage</span>
+                    <div style="display: flex; gap: 6px; margin-top: 4px;">
+                      <button class="quick-chip ${mode === 'NORMAL' ? 'selected' : ''}" style="flex:1; padding: 7px 0; text-align: center;" onclick="setDiceRollMode('NORMAL')">Normal</button>
+                      <button class="quick-chip ${mode === 'ADVANTAGE' ? 'selected' : ''}" style="flex:1; padding: 7px 0; text-align: center;" onclick="setDiceRollMode('ADVANTAGE')">Advantage (Take High)</button>
+                      <button class="quick-chip ${mode === 'DISADVANTAGE' ? 'selected' : ''}" style="flex:1; padding: 7px 0; text-align: center;" onclick="setDiceRollMode('DISADVANTAGE')">Disadvantage (Take Low)</button>
+                    </div>
+                  </div>
+                ` : ""}
+
+                <!-- PRIMARY ROLL BUTTON -->
+                <button class="btn-prep-action solid-gold" style="margin-top: 14px; height: 52px; font-size: 16px;" onclick="rollConfiguredDice()">
+                  <span>🎲</span>
+                  <span>ROLL ${count}d${sides === 100 ? '%' : sides} ${modStr ? ` ${modStr}` : ""} ${mode === 'ADVANTAGE' ? '(Adv)' : mode === 'DISADVANTAGE' ? '(Disadv)' : ''}</span>
+                </button>
+              </div>
+            ` : `
+              <!-- MIXED DICE POOL TRAY MODE (Mix Multiple Dice Types) -->
+              <div class="dialog-inner-card">
+                <span class="dialog-inner-title">Custom Multi-Dice Pool Builder</span>
+                <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 8px;">
+                  Add any combination of dice into your tray (e.g. 2d6 + 1d8 + 3). Tap + / − to adjust dice.
+                </p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px;">
+                  ${diceOptions.map(s => {
+                    const qty = (store.diceTray && store.diceTray[s]) || 0;
+                    return `
+                      <div style="background: var(--bg-card-darker); border: 1.5px solid ${qty > 0 ? 'var(--color-gold)' : 'var(--border-card)'}; border-radius: 10px; padding: 8px; display: flex; flex-direction: column; align-items: center;">
+                        <strong style="color: ${qty > 0 ? 'var(--color-gold-light)' : '#fff'}; font-size: 14px;">d${s === 100 ? '%' : s}</strong>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
+                          <button class="btn-dice-stepper" style="width: 26px; height: 26px; font-size: 14px;" onclick="adjustTrayDie(${s}, -1)">−</button>
+                          <span style="font-weight: 800; font-size: 14px; min-width: 18px; text-align: center; color: ${qty > 0 ? 'var(--color-gold)' : 'var(--text-muted)'};">${qty}</span>
+                          <button class="btn-dice-stepper" style="width: 26px; height: 26px; font-size: 14px;" onclick="adjustTrayDie(${s}, 1)">+</button>
+                        </div>
+                      </div>
+                    `;
+                  }).join("")}
+                </div>
+
+                <!-- Active Tray Preview Bar -->
+                <div class="dice-tray-preview-bar" style="margin-top: 12px;">
+                  <div>
+                    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Active Tray Formula</span>
+                    <span class="dice-tray-formula-text">${trayFormula}</span>
+                  </div>
+                  <button class="btn-header-link crimson" style="font-size: 12px;" onclick="clearDiceTray()">Clear Tray</button>
+                </div>
+
+                <!-- Modifier Stepper for Tray -->
+                <div style="margin-top: 10px;">
+                  <span class="dialog-inner-title">Add Modifier to Tray Total</span>
+                  <div class="dice-stepper-row" style="margin-top: 4px;">
+                    <div class="dice-stepper-group">
+                      <button class="btn-dice-stepper" onclick="adjustDiceModifier(-1)">−</button>
+                      <input type="number" class="dice-num-box" value="${mod}" onchange="setDiceModifier(parseInt(this.value, 10) || 0)">
+                      <button class="btn-dice-stepper" onclick="adjustDiceModifier(1)">+</button>
+                    </div>
+                    <div class="quick-chips-row">
+                      ${[-5, -2, -1, 0, 1, 2, 3, 4, 5, 7, 10].map(m => `
+                        <button class="quick-chip ${mod === m ? 'selected' : ''}" onclick="setDiceModifier(${m})">${m >= 0 ? `+${m}` : m}</button>
+                      `).join("")}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ROLL TRAY BUTTON & SAVE AS PRESET -->
+                <button class="btn-prep-action solid-gold" style="margin-top: 14px; height: 50px; font-size: 15px;" onclick="rollDicePool()" ${trayTotalDiceCount === 0 ? 'disabled' : ''}>
+                  <span>🎲</span>
+                  <span>ROLL TRAY (${trayFormula})</span>
+                </button>
+                ${trayTotalDiceCount > 0 ? `
+                  <button class="btn-prev-turn" style="height: 38px; width: 100%; border-radius: 8px; margin-top: 6px; font-size: 12.5px;" onclick="openCustomPresetModal('${trayFormula}')">
+                    💾 Save Active Tray as Custom Preset
+                  </button>
+                ` : ""}
+              </div>
+            `}
+
+            <!-- CUSTOM DICE PRESETS (User Saved Shortcuts) -->
+            <div class="dialog-inner-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="dialog-inner-title">⭐ My Custom Presets (${(store.customDicePresets || []).length})</span>
+                <button class="btn-header-link gold" onclick="openCustomPresetModal()">+ Add Preset</button>
+              </div>
+              <div class="quick-chips-row" style="margin-top: 8px;">
+                ${(store.customDicePresets || []).map(p => `
+                  <div class="custom-preset-chip" onclick="rollCustomDicePreset('${p.id}')">
+                    <span>🎲 <strong>${p.name}</strong> (${p.formula})</span>
+                    <span class="custom-preset-del" onclick="event.stopPropagation(); deleteCustomDicePreset('${p.id}');" title="Delete">✕</span>
+                  </div>
+                `).join("")}
+                ${(!store.customDicePresets || store.customDicePresets.length === 0) ? `
+                  <span style="font-size: 11.5px; color: var(--text-muted);">No custom presets yet. Tap "+ Add Preset" to create shortcuts for your signature attacks or spells!</span>
+                ` : ""}
+              </div>
+            </div>
+
+            <!-- QUICK 5E PRESET BUTTONS -->
+            <div class="dialog-inner-card">
+              <span class="dialog-inner-title">⚡ Quick 5e Presets</span>
+              <div class="quick-chips-row" style="margin-top: 6px;">
+                <button class="quick-chip" onclick="quickRollPreset('d20_check')">1d20 Check</button>
+                <button class="quick-chip" onclick="quickRollPreset('d20_adv')">1d20 (Advantage)</button>
+                <button class="quick-chip" onclick="quickRollPreset('greatsword')">2d6+3 Greatsword</button>
+                <button class="quick-chip" onclick="quickRollPreset('longsword')">1d8+3 Longsword</button>
+                <button class="quick-chip" onclick="quickRollPreset('greataxe')">1d12+3 Greataxe</button>
+                <button class="quick-chip" onclick="quickRollPreset('fireball')">8d6 Fireball</button>
+                <button class="quick-chip" onclick="quickRollPreset('stats_4d6')">4d6 Drop Lowest (Stats)</button>
+                <button class="quick-chip" onclick="quickRollPreset('cantrip_d10')">1d10 Cantrip</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN ON PC: ROLL HISTORY & 5E REFERENCE -->
+          <div class="desktop-dice-right">
+            <!-- RECENT ROLL HISTORY -->
+            ${(store.diceHistory && store.diceHistory.length > 0) ? `
+              <div class="dialog-inner-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span class="dialog-inner-title">📜 Roll History (${store.diceHistory.length})</span>
+                  <button class="btn-header-link crimson" style="font-size: 11px;" onclick="clearDiceHistory()">Clear</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto;">
+                  ${store.diceHistory.map(h => `
+                    <div class="roll-history-item">
+                      <div>
+                        <strong style="color: #fff;">${h.formula}</strong>
+                        <div style="font-size: 11px; color: var(--text-muted);">${h.calculation || ""}</div>
+                      </div>
+                      <div style="text-align: right;">
+                        <span style="font-size: 18px; font-weight: 900; color: ${h.isNat20 ? '#34d399' : h.isNat1 ? '#ef4444' : 'var(--color-gold-light)'};">
+                          ${h.total}
+                        </span>
+                        <div style="font-size: 10px; color: var(--text-subtle);">${h.timestamp || ""}</div>
+                      </div>
+                    </div>
                   `).join("")}
                 </div>
               </div>
+            ` : `
+              <div class="dialog-inner-card" style="padding: 16px; text-align: center;">
+                <span style="font-size: 26px;">📜</span>
+                <span class="dialog-inner-title" style="margin-top: 4px; display: block;">No Past Rolls</span>
+                <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">Past rolls will be logged here for quick reference during combat.</p>
+              </div>
+            `}
+
+            <!-- 5E REFERENCE TIPS -->
+            <div class="dialog-inner-card">
+              <span class="dialog-inner-title">⚡ 5e Quick Dice Rules</span>
+              <ul style="font-size: 11.5px; color: var(--text-muted); padding-left: 16px; display: flex; flex-direction: column; gap: 5px; margin-top: 6px;">
+                <li><strong>Critical Hit (Nat 20):</strong> Roll all damage dice twice and add normal modifier.</li>
+                <li><strong>Advantage:</strong> Roll 2d20, keep the higher result.</li>
+                <li><strong>Disadvantage:</strong> Roll 2d20, keep the lower result.</li>
+                <li><strong>Ability Checks:</strong> 1d20 + Ability Modifier + Proficiency (if proficient).</li>
+              </ul>
             </div>
-
-            <!-- ROLL TRAY BUTTON -->
-            <button class="btn-prep-action solid-gold" style="margin-top: 14px; height: 52px; font-size: 16px;" onclick="rollDicePool()" ${trayTotalDiceCount === 0 ? 'disabled' : ''}>
-              <span>🎲</span>
-              <span>ROLL TRAY (${trayFormula})</span>
-            </button>
-          </div>
-        `}
-
-        <!-- QUICK 5E PRESET BUTTONS -->
-        <div class="dialog-inner-card">
-          <span class="dialog-inner-title">⚡ Quick 5e Presets</span>
-          <div class="quick-chips-row" style="margin-top: 6px;">
-            <button class="quick-chip" onclick="quickRollPreset('d20_check')">1d20 Check</button>
-            <button class="quick-chip" onclick="quickRollPreset('d20_adv')">1d20 (Advantage)</button>
-            <button class="quick-chip" onclick="quickRollPreset('greatsword')">2d6+3 Greatsword</button>
-            <button class="quick-chip" onclick="quickRollPreset('longsword')">1d8+3 Longsword</button>
-            <button class="quick-chip" onclick="quickRollPreset('greataxe')">1d12+3 Greataxe</button>
-            <button class="quick-chip" onclick="quickRollPreset('fireball')">8d6 Fireball</button>
-            <button class="quick-chip" onclick="quickRollPreset('stats_4d6')">4d6 Drop Lowest (Stats)</button>
-            <button class="quick-chip" onclick="quickRollPreset('cantrip_d10')">1d10 Cantrip</button>
           </div>
         </div>
-
-        <!-- ACTIVE ROLL RESULT SPOTLIGHT CARD -->
-        ${last ? `
-          <div class="roll-result-card ${last.isNat20 ? 'nat20' : last.isNat1 ? 'nat1' : ''}">
-            <span style="font-size: 12px; font-weight: 800; letter-spacing: 1px; color: ${last.isNat20 ? '#34d399' : last.isNat1 ? '#ef4444' : 'var(--color-gold)'}; text-transform: uppercase;">
-              ${last.isNat20 ? '🌟 NATURAL 20! CRITICAL HIT!' : last.isNat1 ? '💀 NATURAL 1! CRITICAL FUMBLE!' : 'ROLL RESULT'}
-            </span>
-
-            <div class="roll-total-num ${last.isNat20 ? 'green' : last.isNat1 ? 'red' : ''}">
-              ${last.total}
-            </div>
-
-            <div style="font-size: 14px; font-weight: 800; color: var(--text-white);">
-              ${last.formula}
-            </div>
-
-            <!-- Dice Individual Badges -->
-            ${last.rolls && last.rolls.length > 0 ? `
-              <div class="dice-breakdown-chips-row">
-                ${last.rolls.map((r, idx) => `
-                  <span class="die-result-pill ${r.dropped ? 'dropped' : ''} ${r.value === 20 && last.sides === 20 ? 'crit' : r.value === 1 && last.sides === 20 ? 'fumble' : ''}">
-                    ${r.label || `Die ${idx+1}`}: ${r.value}${r.dropped ? ' (dropped)' : ''}
-                  </span>
-                `).join("")}
-                ${last.modifier !== 0 ? `
-                  <span class="die-result-pill" style="border-color: var(--color-gold); color: var(--color-gold-light);">
-                    Mod: ${last.modifier > 0 ? `+${last.modifier}` : last.modifier}
-                  </span>
-                ` : ""}
-              </div>
-            ` : ""}
-
-            <div class="roll-breakdown-details">
-              ${last.calculation || `Total: ${last.total}`} • Rolled at ${last.timestamp || "Just now"}
-            </div>
-          </div>
-        ` : ""}
-
-        <!-- RECENT ROLL HISTORY -->
-        ${(store.diceHistory && store.diceHistory.length > 0) ? `
-          <div class="dialog-inner-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span class="dialog-inner-title">📜 Roll History (${store.diceHistory.length})</span>
-              <button class="btn-header-link crimson" style="font-size: 11px;" onclick="clearDiceHistory()">Clear</button>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 6px; max-height: 240px; overflow-y: auto;">
-              ${store.diceHistory.map(h => `
-                <div class="roll-history-item">
-                  <div>
-                    <strong style="color: #fff;">${h.formula}</strong>
-                    <div style="font-size: 11px; color: var(--text-muted);">${h.calculation || ""}</div>
-                  </div>
-                  <div style="text-align: right;">
-                    <span style="font-size: 18px; font-weight: 900; color: ${h.isNat20 ? '#34d399' : h.isNat1 ? '#ef4444' : 'var(--color-gold-light)'};">
-                      ${h.total}
-                    </span>
-                    <div style="font-size: 10px; color: var(--text-subtle);">${h.timestamp || ""}</div>
-                  </div>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        ` : ""}
       ` : subTab === "conditions" ? `
         <!-- 5E CONDITIONS REFERENCE -->
         <div class="dialog-inner-card">
@@ -2124,21 +2734,59 @@ function submitTempHpAction() {
 }
 
 // ------------------------------------------
-// 5. CONDITIONS MODAL
+// 5. CONDITIONS MODAL (With Status Timers & Durations)
 // ------------------------------------------
+function updateConditionDurationUi() {
+  const dur = store.activeConditionDuration || "permanent";
+  const rounds = store.activeConditionRounds || 1;
+
+  document.querySelectorAll(".cond-duration-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.dur === dur);
+  });
+
+  const labelEl = document.getElementById("cond-timer-rounds-label");
+  if (labelEl) {
+    if (dur === "permanent") labelEl.textContent = "Permanent";
+    else if (dur === "start_next_turn") labelEl.textContent = "Until start of next turn";
+    else if (dur === "end_next_turn") labelEl.textContent = "Until end of next turn";
+    else if (dur === "end_current_turn") labelEl.textContent = "Until end of current turn";
+    else if (dur === "rounds") labelEl.textContent = `${rounds} Round${rounds > 1 ? 's' : ''}`;
+  }
+
+  const numEl = document.getElementById("cond-custom-rounds-num");
+  if (numEl) numEl.textContent = rounds;
+}
+
+function setConditionActiveDuration(dur) {
+  store.activeConditionDuration = dur;
+  updateConditionDurationUi();
+}
+
+function adjustConditionCustomRounds(delta) {
+  store.activeConditionRounds = Math.max(1, Math.min(20, (store.activeConditionRounds || 1) + delta));
+  store.activeConditionDuration = "rounds";
+  updateConditionDurationUi();
+}
+
 function openConditionsModal(combatantId) {
   const c = store.encounter.combatants.find(x => x.id === combatantId);
   if (!c) return;
   store.activeCombatantId = combatantId;
 
   document.getElementById("modal-cond-title").textContent = `Conditions: ${c.name}`;
+  updateConditionDurationUi();
+
   const grid = document.getElementById("modal-cond-grid");
   grid.innerHTML = CONDITIONS.map(cond => {
-    const isChecked = (c.conditions || []).includes(cond.id);
+    const existing = (c.conditions || []).find(cn => (typeof cn === 'string' ? cn : cn.id) === cond.id);
+    const isChecked = !!existing;
+    const info = existing ? getConditionInfo(existing) : null;
+    const tag = info && info.timerLabel ? ` <span class="cond-timer-tag" style="color:#38bdf8;">${info.timerLabel}</span>` : "";
+
     return `
       <label style="display:flex; align-items:center; gap:8px; padding:6px 10px; background:var(--bg-card-darker); border:1px solid ${isChecked ? cond.color : "var(--border-subtle)"}; border-radius:8px; cursor:pointer;">
         <input type="checkbox" ${isChecked ? "checked" : ""} onchange="toggleCombatantCondition('${c.id}', '${cond.id}')">
-        <span style="font-size:12px; font-weight:700; color:${isChecked ? cond.color : "var(--text-white)"};">${cond.name}</span>
+        <span style="font-size:12px; font-weight:700; color:${isChecked ? cond.color : "var(--text-white)"};">${cond.name}${tag}</span>
       </label>
     `;
   }).join("");
@@ -2149,10 +2797,41 @@ function openConditionsModal(combatantId) {
 function toggleCombatantCondition(combatantId, condId) {
   const c = store.encounter.combatants.find(x => x.id === combatantId);
   if (!c) return;
-  const conds = c.conditions || [];
-  c.conditions = conds.includes(condId) ? conds.filter(x => x !== condId) : [...conds, condId];
+  c.conditions = c.conditions || [];
+  const existingIdx = c.conditions.findIndex(cn => (typeof cn === 'string' ? cn : cn.id) === condId);
+
+  if (existingIdx >= 0) {
+    c.conditions.splice(existingIdx, 1);
+    store.logEvent(`Removed ${getConditionName(condId)} from ${c.name}`, "info");
+  } else {
+    const dur = store.activeConditionDuration || "permanent";
+    const rounds = store.activeConditionRounds || 1;
+    c.conditions.push({
+      id: condId,
+      duration: dur,
+      roundsRemaining: dur === "rounds" ? rounds : null,
+      appliedRound: store.encounter.round,
+      turnsPassed: 0
+    });
+    store.logEvent(`Applied ${getConditionName(condId)} to ${c.name} (${dur === 'rounds' ? `${rounds} rnds` : dur})`, "info");
+  }
+
   store.save();
+  openConditionsModal(combatantId); // refresh checkboxes and tags live in modal
   renderApp();
+}
+
+function removeCombatantCondition(combatantId, condId) {
+  const c = store.encounter.combatants.find(x => x.id === combatantId);
+  if (!c || !c.conditions) return;
+  const idx = c.conditions.findIndex(cn => (typeof cn === 'string' ? cn : cn.id) === condId);
+  if (idx >= 0) {
+    c.conditions.splice(idx, 1);
+    store.logEvent(`Removed ${getConditionName(condId)} from ${c.name}`, "info");
+    store.save();
+    renderApp();
+    showToast(`Removed ${getConditionName(condId)}`);
+  }
 }
 
 // ------------------------------------------
@@ -2297,6 +2976,325 @@ function saveCustomEnemy() {
   closeModal("modal-enemy-dialog");
   renderApp();
   showToast(`Added ${name}!`);
+}
+
+// ------------------------------------------
+// BESTIARY HANDLERS (Multi-select, Quantities, Sorting, Spawning)
+// ------------------------------------------
+function setBestiarySearch(q) {
+  store.bestiarySearchQuery = q;
+  renderApp();
+}
+
+function setBestiaryTypeFilter(t) {
+  store.bestiarySelectedType = t;
+  renderApp();
+}
+
+function setBestiarySort(s) {
+  store.bestiarySortBy = s;
+  renderApp();
+}
+
+function adjustBestiaryQuantity(name, delta) {
+  store.bestiaryQuantities = store.bestiaryQuantities || {};
+  store.bestiaryQuantities[name] = Math.max(1, Math.min(50, (store.bestiaryQuantities[name] || 1) + delta));
+  renderApp();
+}
+
+function toggleBestiaryMonsterSelected(name) {
+  store.bestiarySelectedMonsters = store.bestiarySelectedMonsters || {};
+  store.bestiarySelectedMonsters[name] = !store.bestiarySelectedMonsters[name];
+  renderApp();
+}
+
+function clearBestiarySelections() {
+  store.bestiarySelectedMonsters = {};
+  renderApp();
+}
+
+function spawnMonsterWithQty(monsterName, qty = 1) {
+  const m = getAllBestiaryMonsters().find(x => x.name === monsterName);
+  if (!m) return;
+  const count = Math.max(1, parseInt(qty, 10) || 1);
+
+  // Determine existing count in encounter to number uniquely
+  const existingCount = store.encounter.combatants.filter(c => c.name.startsWith(m.name)).length;
+
+  for (let i = 0; i < count; i++) {
+    const num = existingCount + i + 1;
+    const displayName = (count > 1 || existingCount > 0) ? `${m.name} #${num}` : m.name;
+    const initRoll = rollD20() + m.initMod;
+
+    store.encounter.combatants.push({
+      id: "enemy-" + Date.now() + "-" + i,
+      name: displayName,
+      isPlayer: false,
+      characterClassOrType: `${m.type} (${m.cr})`,
+      maxHp: m.maxHp,
+      currentHp: m.maxHp,
+      tempHp: 0,
+      armorClass: m.ac,
+      baseArmorClass: m.ac,
+      coverType: "NONE",
+      initiativeModifier: m.initMod,
+      initiativeRoll: initRoll,
+      speed: m.speed,
+      baseSpeed: m.speed,
+      isDifficultTerrain: false,
+      spellDc: m.spellDc,
+      notes: m.notes,
+      abilities: [],
+      conditions: [],
+      deathSavesSuccess: 0,
+      deathSavesFailure: 0,
+      isStabilized: false,
+      isDead: false
+    });
+  }
+
+  if (store.encounter.isCombatStarted) {
+    store.encounter.combatants = sortCombatants(store.encounter.combatants);
+  }
+  store.logEvent(`Deployed ${count}x ${m.name} to combat`, "info");
+  store.save();
+  renderApp();
+  showToast(`Deployed ${count}x ${m.name} to combat!`);
+}
+
+function deploySelectedBestiaryMonsters() {
+  const selectedNames = Object.keys(store.bestiarySelectedMonsters || {}).filter(k => store.bestiarySelectedMonsters[k]);
+  if (selectedNames.length === 0) {
+    showToast("No monsters selected");
+    return;
+  }
+
+  let totalDeployed = 0;
+  selectedNames.forEach(name => {
+    const qty = (store.bestiaryQuantities && store.bestiaryQuantities[name]) || 1;
+    spawnMonsterWithQty(name, qty);
+    totalDeployed += qty;
+  });
+
+  store.bestiarySelectedMonsters = {};
+  store.currentTab = "combat";
+  store.save();
+  renderApp();
+  showToast(`Deployed ${totalDeployed} foes to Combat Arena!`);
+}
+
+// ------------------------------------------
+// CUSTOM BESTIARY LIBRARY MODAL HANDLERS
+// ------------------------------------------
+function openCustomMonsterModal(editMonsterName = null) {
+  const isEditing = !!editMonsterName;
+  const existing = isEditing ? (store.customBestiaryMonsters || []).find(x => x.name === editMonsterName) : null;
+
+  document.getElementById("modal-cbestiary-title").textContent = isEditing ? `Edit Monster: ${existing.name}` : "Add Monster to Library";
+  document.getElementById("modal-cbestiary-original-name").value = isEditing ? existing.name : "";
+  document.getElementById("modal-cbestiary-name").value = existing ? existing.name : "";
+  document.getElementById("modal-cbestiary-type").value = existing ? existing.type : "Humanoid";
+  document.getElementById("modal-cbestiary-cr").value = existing ? existing.cr : "CR 1";
+  document.getElementById("modal-cbestiary-hp").value = existing ? existing.maxHp : 25;
+  document.getElementById("modal-cbestiary-ac").value = existing ? existing.ac : 13;
+  document.getElementById("modal-cbestiary-init").value = existing ? existing.initMod : 1;
+  document.getElementById("modal-cbestiary-speed").value = existing ? existing.speed : 30;
+  document.getElementById("modal-cbestiary-perception").value = existing ? existing.perception : 11;
+  document.getElementById("modal-cbestiary-dc").value = existing && existing.spellDc ? existing.spellDc : "";
+  document.getElementById("modal-cbestiary-notes").value = existing ? existing.notes : "";
+
+  openModal("modal-custom-bestiary-dialog");
+}
+
+function saveCustomMonsterToLibrary() {
+  const origName = document.getElementById("modal-cbestiary-original-name").value;
+  const name = document.getElementById("modal-cbestiary-name").value.trim();
+  const type = document.getElementById("modal-cbestiary-type").value || "Humanoid";
+  const cr = document.getElementById("modal-cbestiary-cr").value || "CR 1";
+  const hp = parseInt(document.getElementById("modal-cbestiary-hp").value, 10) || 20;
+  const ac = parseInt(document.getElementById("modal-cbestiary-ac").value, 10) || 12;
+  const init = parseInt(document.getElementById("modal-cbestiary-init").value, 10) || 0;
+  const speed = parseInt(document.getElementById("modal-cbestiary-speed").value, 10) || 30;
+  const perception = parseInt(document.getElementById("modal-cbestiary-perception").value, 10) || 10;
+  const dcVal = document.getElementById("modal-cbestiary-dc").value.trim();
+  const dc = dcVal ? (parseInt(dcVal, 10) || null) : null;
+  const notes = document.getElementById("modal-cbestiary-notes").value.trim();
+
+  if (!name) {
+    showToast("Monster name is required");
+    return;
+  }
+
+  store.customBestiaryMonsters = store.customBestiaryMonsters || [];
+
+  const monsterData = {
+    name: name,
+    cr: cr,
+    type: type,
+    maxHp: hp,
+    ac: ac,
+    initMod: init,
+    speed: speed,
+    perception: perception,
+    spellDc: dc,
+    notes: notes,
+    isCustom: true
+  };
+
+  if (origName) {
+    const idx = store.customBestiaryMonsters.findIndex(x => x.name === origName);
+    if (idx >= 0) {
+      store.customBestiaryMonsters[idx] = monsterData;
+    } else {
+      store.customBestiaryMonsters.push(monsterData);
+    }
+  } else {
+    // Check if monster with same name exists
+    const existingIdx = store.customBestiaryMonsters.findIndex(x => x.name.toLowerCase() === name.toLowerCase());
+    if (existingIdx >= 0) {
+      store.customBestiaryMonsters[existingIdx] = monsterData;
+    } else {
+      store.customBestiaryMonsters.unshift(monsterData);
+    }
+  }
+
+  store.save();
+  closeModal("modal-custom-bestiary-dialog");
+  renderApp();
+  showToast(`Saved "${name}" to Bestiary Library!`);
+}
+
+function deleteCustomMonsterFromLibrary(name) {
+  store.customBestiaryMonsters = (store.customBestiaryMonsters || []).filter(x => x.name !== name);
+  if (store.bestiarySelectedMonsters) delete store.bestiarySelectedMonsters[name];
+  if (store.bestiaryQuantities) delete store.bestiaryQuantities[name];
+  store.save();
+  renderApp();
+  showToast(`Deleted "${name}" from library`);
+}
+
+// ------------------------------------------
+// CUSTOM DICE PRESETS HANDLERS
+// ------------------------------------------
+function openCustomPresetModal(prefillFormula = "") {
+  document.getElementById("modal-preset-name").value = "";
+  document.getElementById("modal-preset-formula").value = prefillFormula || "";
+  openModal("modal-preset-dialog");
+}
+
+function saveCustomDicePreset() {
+  const name = document.getElementById("modal-preset-name").value.trim();
+  const formula = document.getElementById("modal-preset-formula").value.trim();
+
+  if (!name) {
+    showToast("Preset name is required");
+    return;
+  }
+  if (!formula) {
+    showToast("Dice formula is required");
+    return;
+  }
+
+  store.customDicePresets = store.customDicePresets || [];
+  store.customDicePresets.push({
+    id: "preset-" + Date.now(),
+    name: name,
+    formula: formula,
+    isDefault: false
+  });
+
+  store.save();
+  closeModal("modal-preset-dialog");
+  renderApp();
+  showToast(`Saved preset "${name}"!`);
+}
+
+function deleteCustomDicePreset(id) {
+  store.customDicePresets = (store.customDicePresets || []).filter(p => p.id !== id);
+  store.save();
+  renderApp();
+  showToast("Preset deleted");
+}
+
+function rollCustomDicePreset(id) {
+  const preset = (store.customDicePresets || []).find(p => p.id === id);
+  if (!preset) return;
+  executeDiceFormula(preset.formula, preset.name);
+}
+
+function executeDiceFormula(formula, label = "Custom Roll") {
+  const lower = formula.toLowerCase();
+  if (lower.includes("drop lowest") && lower.includes("4d6")) {
+    quickRollPreset("stats_4d6");
+    return;
+  }
+  if (lower.includes("adv") && lower.includes("d20")) {
+    quickRollPreset("d20_adv");
+    return;
+  }
+
+  const tokens = formula.replace(/\s+/g, "").match(/([+-]?[0-9]*d[0-9]+|[+-]?[0-9]+)/gi);
+  if (!tokens || tokens.length === 0) {
+    showToast("Invalid formula");
+    return;
+  }
+
+  let total = 0;
+  let rolls = [];
+  let modifier = 0;
+  let calculationParts = [];
+
+  tokens.forEach(tok => {
+    if (tok.toLowerCase().includes("d")) {
+      const parts = tok.toLowerCase().split("d");
+      const sign = parts[0].startsWith("-") ? -1 : 1;
+      const countStr = parts[0].replace(/[+-]/g, "");
+      const count = countStr ? parseInt(countStr, 10) : 1;
+      const sides = parseInt(parts[1], 10) || 6;
+
+      let subTotal = 0;
+      let dieRolls = [];
+      for (let i = 0; i < count; i++) {
+        const val = Math.floor(Math.random() * sides) + 1;
+        dieRolls.push(val);
+        rolls.push({ value: val, label: `d${sides}` });
+        subTotal += val;
+      }
+      total += sign * subTotal;
+      calculationParts.push(`${count}d${sides} [${dieRolls.join(", ")}]`);
+    } else {
+      const modVal = parseInt(tok, 10);
+      if (!isNaN(modVal)) {
+        modifier += modVal;
+        total += modVal;
+      }
+    }
+  });
+
+  const isNat20 = rolls.length === 1 && rolls[0].label === "d20" && rolls[0].value === 20;
+  const isNat1 = rolls.length === 1 && rolls[0].label === "d20" && rolls[0].value === 1;
+
+  if (modifier !== 0) {
+    calculationParts.push(modifier > 0 ? `+ ${modifier}` : `- ${Math.abs(modifier)}`);
+  }
+
+  const rollResult = {
+    formula: `${label} (${formula})`,
+    total: total,
+    rolls: rolls,
+    modifier: modifier,
+    isNat20: isNat20,
+    isNat1: isNat1,
+    calculation: calculationParts.join(" ") + ` = ${total}`,
+    timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+  };
+
+  store.lastRoll = rollResult;
+  store.diceHistory.unshift(rollResult);
+  if (store.diceHistory.length > 50) store.diceHistory.pop();
+  store.save();
+  renderApp();
+  showToast(`Rolled ${label}: ${total}!`);
 }
 
 // ------------------------------------------

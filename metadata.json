@@ -1,5 +1,5 @@
 {
-  "name": "Combat Tracker Web App",
+  "name": "Combat Tracker",
   "description": "D\u0026D 5e combat and initiative tracker with persistent player characters, quick enemy builder, turns, and stats monitoring.",
   "requestFramePermissions": [],
   "majorCapabilities": [
