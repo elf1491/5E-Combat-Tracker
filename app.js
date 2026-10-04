@@ -284,6 +284,9 @@ class DndStore {
     this.activeConditionDuration = "permanent";
     this.activeConditionRounds = 1;
 
+    // Custom Monsters Library (Saved by user to Bestiary)
+    this.customMonsters = this.load("dnd_custom_monsters_v2", []);
+
     // Custom Dice Presets (Saved by user)
     this.customDicePresets = this.load("dnd_custom_presets_v2", [
       { id: "p-d20", name: "1d20 Check", formula: "1d20", isDefault: true },
@@ -295,9 +298,6 @@ class DndStore {
       { id: "p-stats", name: "4d6 Drop Lowest", formula: "4d6 drop lowest", isDefault: true },
       { id: "p-cantrip", name: "1d10 Cantrip", formula: "1d10", isDefault: true }
     ]);
-
-    // Custom Bestiary Monsters (Saved by user in library)
-    this.customBestiaryMonsters = this.load("dnd_custom_bestiary_v1", []);
   }
 
   load(key, fallback) {
@@ -315,7 +315,7 @@ class DndStore {
       localStorage.setItem("dnd_encounter_v2", JSON.stringify(this.encounter));
       localStorage.setItem("dnd_dice_hist_v2", JSON.stringify(this.diceHistory));
       localStorage.setItem("dnd_custom_presets_v2", JSON.stringify(this.customDicePresets));
-      localStorage.setItem("dnd_custom_bestiary_v1", JSON.stringify(this.customBestiaryMonsters || []));
+      localStorage.setItem("dnd_custom_monsters_v2", JSON.stringify(this.customMonsters || []));
     } catch (e) {}
   }
 
@@ -333,11 +333,6 @@ class DndStore {
 }
 
 const store = new DndStore();
-
-function getAllBestiaryMonsters() {
-  const custom = (store && store.customBestiaryMonsters) || [];
-  return [...custom, ...MONSTER_PRESETS];
-}
 
 // ==========================================
 // UTILITY FUNCTIONS
@@ -446,32 +441,54 @@ function prevTurn() {
 // CONDITION TIMERS & HELPERS
 // ------------------------------------------
 
+function findMonsterByName(name) {
+  return (store.customMonsters || []).find(x => x.name === name) || MONSTER_PRESETS.find(x => x.name === name);
+}
+
 function getConditionName(id) {
   const cond = CONDITIONS.find(c => c.id === id);
   return cond ? cond.name : id;
 }
 
 function getConditionInfo(cItem) {
+  if (!cItem) return null;
   const id = typeof cItem === "string" ? cItem : cItem.id;
   const condDef = CONDITIONS.find(x => x.id === id);
-  if (!condDef) return null;
+  const def = condDef || {
+    id: id,
+    name: id.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+    color: "#f59e0b",
+    desc: "Condition status"
+  };
+
   let timerLabel = "";
-  if (typeof cItem === "object") {
-    if (cItem.duration === "rounds") {
-      timerLabel = `(${cItem.roundsRemaining || 1} rnd${(cItem.roundsRemaining || 1) === 1 ? '' : 's'})`;
-    } else if (cItem.duration === "start_next_turn") {
+  let roundsCount = null;
+  const isObj = typeof cItem === "object";
+  const duration = isObj ? (cItem.duration || "permanent") : "permanent";
+  const isPermanent = duration === "permanent";
+
+  if (isObj) {
+    if (duration === "rounds") {
+      roundsCount = cItem.roundsRemaining != null ? cItem.roundsRemaining : 1;
+      timerLabel = `(${roundsCount} rnd${roundsCount === 1 ? '' : 's'})`;
+    } else if (duration === "start_next_turn") {
+      roundsCount = 1;
       timerLabel = `(start next turn)`;
-    } else if (cItem.duration === "end_next_turn") {
+    } else if (duration === "end_next_turn") {
+      roundsCount = 1;
       timerLabel = `(end next turn)`;
-    } else if (cItem.duration === "end_current_turn") {
+    } else if (duration === "end_current_turn") {
+      roundsCount = 1;
       timerLabel = `(end of turn)`;
     }
   }
+
   return {
-    ...condDef,
-    duration: typeof cItem === "object" ? cItem.duration : "permanent",
-    roundsRemaining: typeof cItem === "object" ? cItem.roundsRemaining : null,
-    timerLabel: timerLabel
+    ...def,
+    duration,
+    roundsRemaining: roundsCount,
+    timerLabel: timerLabel,
+    isPermanent: isPermanent
   };
 }
 
@@ -1025,31 +1042,47 @@ function renderCombatScreen() {
               </button>
             </div>
 
-            <!-- ACTIVE CONDITIONS IN CURRENT TURN BOX (Shows round timer number next to non-permanent conditions) -->
-            <div class="turn-conditions-row">
+            <!-- ACTIVE CONDITIONS IN CURRENT TURN BOX (With rounds remaining badge for non-permanent) -->
+            <div class="turn-conditions-section">
               <div class="turn-conditions-header">
-                <span class="turn-conditions-title">
+                <div class="turn-conditions-title">
                   <span>✨</span>
-                  <span>Active Conditions (${(active.conditions || []).length})</span>
-                </span>
-                <button class="btn-add-cond-mini" onclick="openConditionsModal('${active.id}')">+ Add Condition</button>
+                  <span>Active Conditions</span>
+                </div>
+                <button class="btn-header-link gold" style="font-size:11px;" onclick="openConditionsModal('${active.id}')">+ Add / Edit</button>
               </div>
-              <div class="turn-conditions-chips">
-                ${(active.conditions && active.conditions.length > 0) ? active.conditions.map(cn => {
+
+              <div class="turn-conditions-chips-row">
+                ${active.coverType && active.coverType !== "NONE" ? `
+                  <span class="pill-turn-condition" style="border-color:#38bdf8; color:#38bdf8;" onclick="openAcModal('${active.id}')" title="5e Cover Bonus">
+                    <span>🛡️ ${active.coverType === "HALF" ? "Half Cover (+2 AC)" : active.coverType === "THREE_QUARTERS" ? "3/4 Cover (+5 AC)" : "Total Cover"}</span>
+                  </span>
+                ` : ""}
+
+                ${active.isDifficultTerrain ? `
+                  <span class="pill-turn-condition" style="border-color:#d97706; color:#fdba74;" onclick="openSpeedModal('${active.id}')" title="Difficult Terrain (Speed Halved)">
+                    <span>🪵 Difficult Terrain (½ Spd)</span>
+                  </span>
+                ` : ""}
+
+                ${(active.conditions || []).filter(cn => {
+                  const cid = typeof cn === 'string' ? cn : cn.id;
+                  return cid !== "half_cover" && cid !== "three_quarters_cover" && cid !== "total_cover" && cid !== "difficult_terrain";
+                }).map(cn => {
                   const info = getConditionInfo(cn);
                   if (!info) return "";
-                  const isTimed = info.duration && info.duration !== "permanent";
-                  const rounds = info.duration === "rounds" ? (info.roundsRemaining || 1) : 1;
+                  const roundsLeft = (!info.isPermanent && info.roundsRemaining !== null) ? info.roundsRemaining : null;
                   return `
-                    <span class="turn-cond-pill" style="border-color:${info.color}; color:${info.color};" onclick="openConditionsModal('${active.id}')" title="${info.desc}">
+                    <span class="pill-turn-condition" style="border-color:${info.color}; color:${info.color};" onclick="openConditionsModal('${active.id}')" title="${info.desc}">
                       <span>${info.name}</span>
-                      ${isTimed ? `<span class="turn-cond-timer-bubble" title="${info.duration === 'rounds' ? `${rounds} round(s) remaining` : info.timerLabel}">${rounds}</span>` : ""}
-                      <span class="turn-cond-remove" onclick="event.stopPropagation(); removeCombatantCondition('${active.id}', '${info.id}')" title="Remove condition">✕</span>
+                      ${roundsLeft !== null ? `<span class="cond-rounds-left-badge" title="${roundsLeft} round(s) remaining">${roundsLeft}</span>` : ""}
                     </span>
                   `;
-                }).join("") : `
-                  <span style="font-size: 11.5px; color: var(--text-subtle);">No conditions active on ${active.name}.</span>
-                `}
+                }).join("")}
+
+                ${(!active.conditions || active.conditions.length === 0) && (!active.coverType || active.coverType === "NONE") && !active.isDifficultTerrain ? `
+                  <span style="font-size:11.5px; color:var(--text-subtle); font-style:italic;">No active conditions. Tap "+ Add / Edit" to apply.</span>
+                ` : ""}
               </div>
             </div>
 
@@ -1294,10 +1327,9 @@ function renderCombatScreen() {
                   }).map(cn => {
                     const info = getConditionInfo(cn);
                     if (!info) return "";
-                    const isTimed = info.duration && info.duration !== "permanent";
-                    const rounds = info.duration === "rounds" ? (info.roundsRemaining || 1) : 1;
-                    const roundBadge = isTimed ? ` <span class="turn-cond-timer-bubble" style="margin-left:4px;" title="${info.duration === 'rounds' ? `${rounds} rounds left` : info.timerLabel}">${rounds}</span>` : "";
-                    return `<span class="pill-cover-badge" style="border-color:${info.color};" onclick="openConditionsModal('${c.id}')">${info.name}${roundBadge}</span>`;
+                    const roundsLeft = (!info.isPermanent && info.roundsRemaining !== null) ? info.roundsRemaining : null;
+                    const tag = roundsLeft !== null ? ` <span class="cond-rounds-left-badge" title="${roundsLeft} round(s) remaining">${roundsLeft}</span>` : "";
+                    return `<span class="pill-cover-badge" style="border-color:${info.color};" onclick="openConditionsModal('${c.id}')">${info.name}${tag}</span>`;
                   }).join("")}
                   <button class="btn-add-condition-chip" onclick="openConditionsModal('${c.id}')">+ Condition</button>
                 </div>
@@ -1402,14 +1434,21 @@ function renderBestiaryScreen() {
   const selectedType = store.bestiarySelectedType || "All";
   const sortBy = store.bestiarySortBy || "name";
 
-  const allMonsters = getAllBestiaryMonsters();
-  const customCount = (store.customBestiaryMonsters || []).length;
+  const types = ["All", "Custom", "Humanoid", "Undead", "Beast", "Giant", "Dragon", "Aberration", "Monstrosity", "Fiend", "Construct", "Celestial", "Elemental", "Fey", "Ooze", "Plant"];
 
-  const types = ["All", "Humanoid", "Undead", "Beast", "Giant", "Dragon", "Aberration", "Monstrosity", "Fiend", "Construct", "Elemental", "Fey", "Celestial", "Ooze", "Plant"];
+  const customList = (store.customMonsters || []).map(m => ({ ...m, isCustom: true }));
+  const allMonsters = [...customList, ...MONSTER_PRESETS];
 
   // Filter
   let filtered = allMonsters.filter(m => {
-    const matchesType = (selectedType === "All") || (m.type.toLowerCase() === selectedType.toLowerCase());
+    let matchesType = false;
+    if (selectedType === "All") {
+      matchesType = true;
+    } else if (selectedType === "Custom") {
+      matchesType = !!m.isCustom;
+    } else {
+      matchesType = (m.type.toLowerCase() === selectedType.toLowerCase());
+    }
     const matchesQuery = !query || 
       m.name.toLowerCase().includes(query) || 
       m.type.toLowerCase().includes(query) || 
@@ -1420,6 +1459,7 @@ function renderBestiaryScreen() {
 
   // Helper for CR value
   function parseCr(crStr) {
+    if (!crStr) return 0;
     if (crStr.includes("1/8")) return 0.125;
     if (crStr.includes("1/4")) return 0.25;
     if (crStr.includes("1/2")) return 0.5;
@@ -1450,9 +1490,9 @@ function renderBestiaryScreen() {
             <span>🐉</span>
             <span>5E BESTIARY</span>
           </div>
-          <span class="bestiary-subtitle">SRD & Custom Monsters • Multi-select & library deployment (${filtered.length} shown${customCount > 0 ? ` • ${customCount} custom` : ''})</span>
+          <span class="bestiary-subtitle">SRD Monsters & Custom Library • Multi-select & quantity deployment (${filtered.length} shown)</span>
         </div>
-        <button class="btn-custom-monster" onclick="openCustomMonsterModal()">
+        <button class="btn-custom-monster" onclick="openCreateCustomMonsterModal()">
           + Custom Monster
         </button>
       </div>
@@ -1495,7 +1535,7 @@ function renderBestiaryScreen() {
       <div class="monster-type-chips-row">
         ${types.map(t => `
           <button class="monster-type-chip ${selectedType === t ? 'active' : ''}" onclick="setBestiaryTypeFilter('${t}')">
-            ${t === 'All' ? 'All Types' : t}
+            ${t === 'All' ? 'All Types' : t === 'Custom' ? '⭐ Custom' : t}
           </button>
         `).join("")}
       </div>
@@ -1505,34 +1545,31 @@ function renderBestiaryScreen() {
         ${filtered.map(m => {
           const qty = (store.bestiaryQuantities && store.bestiaryQuantities[m.name]) || 1;
           const isSelected = !!(store.bestiarySelectedMonsters && store.bestiarySelectedMonsters[m.name]);
-          const isCustom = !!m.isCustom;
 
           return `
             <div class="bestiary-monster-card" style="${isSelected ? 'border-color: #f43f5e; box-shadow: 0 0 16px rgba(244, 63, 94, 0.35);' : ''}">
-              <!-- Top Row: Checkbox, Name, Type, CR Badge, Edit/Del for custom -->
+              <!-- Top Row: Checkbox, Name, Type, CR Badge, Edit/Delete for Custom -->
               <div class="bestiary-card-top-row">
                 <div style="display: flex; align-items: flex-start; gap: 10px;">
                   <label class="bestiary-card-select-box" title="Select for multi-enemy deployment">
                     <input type="checkbox" class="bestiary-checkbox" ${isSelected ? 'checked' : ''} onchange="toggleBestiaryMonsterSelected('${m.name}')">
                   </label>
                   <div>
-                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                      <span class="bestiary-card-name">${m.name}</span>
-                      ${isCustom ? `<span class="custom-monster-badge">⭐ Custom</span>` : ""}
-                    </div>
-                    <div class="bestiary-card-type">${m.type} • ${isCustom ? 'Custom Library' : '5e SRD'}</div>
+                    <span class="bestiary-card-name">${m.name}</span>
+                    <div class="bestiary-card-type">${m.type} • ${m.isCustom ? "Custom Monster" : "5e SRD"}</div>
                   </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:6px;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  ${m.isCustom ? `<span class="bestiary-cr-badge" style="border-color:#f59e0b; background:rgba(245,158,11,0.18); color:#fbbf24;">CUSTOM</span>` : ""}
                   <span class="bestiary-cr-badge">${m.cr}</span>
-                  ${isCustom ? `
-                    <button class="btn-card-action-mini" onclick="event.stopPropagation(); openCustomMonsterModal('${m.name}')" title="Edit monster in library">✏️</button>
-                    <button class="btn-card-action-mini del" onclick="event.stopPropagation(); deleteCustomMonsterFromLibrary('${m.name}')" title="Delete from library">🗑️</button>
+                  ${m.isCustom ? `
+                    <button class="icon-btn-header gold" style="width:28px; height:28px; font-size:12px;" onclick="openCreateCustomMonsterModal('${m.id}')" title="Edit Monster">✏️</button>
+                    <button class="icon-btn-header crimson" style="width:28px; height:28px; font-size:12px;" onclick="deleteCustomMonster('${m.id}')" title="Delete from Library">🗑️</button>
                   ` : ""}
                 </div>
               </div>
 
-              <!-- Squircles Row (AC, HP, INIT, SPD, PERC, DC) -->
+              <!-- 5 Squircles Row (AC, HP, INIT, SPD, PERC) -->
               <div class="bestiary-squircles-row">
                 <div class="bestiary-squircle">
                   <span class="bestiary-squircle-label">AC</span>
@@ -1544,7 +1581,7 @@ function renderBestiaryScreen() {
                 </div>
                 <div class="bestiary-squircle">
                   <span class="bestiary-squircle-label">INIT</span>
-                  <span class="bestiary-squircle-val" style="color: #fcd34d;">+${m.initMod}</span>
+                  <span class="bestiary-squircle-val" style="color: #fcd34d;">${m.initMod >= 0 ? `+${m.initMod}` : m.initMod}</span>
                 </div>
                 <div class="bestiary-squircle">
                   <span class="bestiary-squircle-label">SPD</span>
@@ -1552,14 +1589,8 @@ function renderBestiaryScreen() {
                 </div>
                 <div class="bestiary-squircle">
                   <span class="bestiary-squircle-label">PERC</span>
-                  <span class="bestiary-squircle-val">${m.perception || 10}</span>
+                  <span class="bestiary-squircle-val">${m.perception}</span>
                 </div>
-                ${m.spellDc ? `
-                  <div class="bestiary-squircle" style="border-color:#a855f7;">
-                    <span class="bestiary-squircle-label" style="color:#c084fc;">DC</span>
-                    <span class="bestiary-squircle-val" style="color:#e9d5ff;">${m.spellDc}</span>
-                  </div>
-                ` : ""}
               </div>
 
               <!-- Traits & Attacks Note -->
@@ -1584,6 +1615,14 @@ function renderBestiaryScreen() {
             </div>
           `;
         }).join("")}
+        ${filtered.length === 0 ? `
+          <div class="dialog-inner-card" style="text-align: center; padding: 32px 16px; align-items: center; grid-column: 1 / -1;">
+            <span style="font-size: 32px;">🔍</span>
+            <strong style="color: var(--color-gold); font-size: 16px; margin-top: 6px;">No Monsters Found</strong>
+            <p style="font-size: 12px; color: var(--text-muted); max-width: 320px; margin-top: 4px;">No monsters matched your current search or type filter. Try adjusting your query or tap "+ Custom Monster" to add one.</p>
+            <button class="btn-prep-action solid-gold" style="max-width: 220px; height: 42px; margin-top: 12px;" onclick="openCreateCustomMonsterModal()">+ Create Custom Monster</button>
+          </div>
+        ` : ""}
       </div>
     </div>
   `;
@@ -1627,62 +1666,52 @@ function renderDiceScreen() {
       </div>
 
       ${subTab === "roller" ? `
-        <!-- ACTIVE ROLL RESULT SPOTLIGHT CARD (Above the dice selector) -->
-        <div class="top-dice-result-container">
-          ${last ? `
-            <div class="roll-result-card ${last.isNat20 ? 'nat20' : last.isNat1 ? 'nat1' : ''}">
-              <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 2px;">
-                <span style="font-size: 11.5px; font-weight: 800; letter-spacing: 1px; color: ${last.isNat20 ? '#34d399' : last.isNat1 ? '#ef4444' : 'var(--color-gold)'}; text-transform: uppercase;">
-                  ${last.isNat20 ? '🌟 NATURAL 20! CRITICAL HIT!' : last.isNat1 ? '💀 NATURAL 1! CRITICAL FUMBLE!' : 'LATEST ROLL RESULT'}
-                </span>
-                <span style="font-size: 11px; color: var(--text-subtle);">${last.timestamp || "Just now"}</span>
-              </div>
-
-              <div class="roll-total-num ${last.isNat20 ? 'green' : last.isNat1 ? 'red' : ''}">
-                ${last.total}
-              </div>
-
-              <div style="font-size: 14px; font-weight: 800; color: var(--text-white); margin-bottom: 4px;">
-                ${last.formula}
-              </div>
-
-              <!-- Dice Individual Badges -->
-              ${last.rolls && last.rolls.length > 0 ? `
-                <div class="dice-breakdown-chips-row">
-                  ${last.rolls.map((r, idx) => `
-                    <span class="die-result-pill ${r.dropped ? 'dropped' : ''} ${r.value === 20 && last.sides === 20 ? 'crit' : r.value === 1 && last.sides === 20 ? 'fumble' : ''}">
-                      ${r.label || `Die ${idx+1}`}: ${r.value}${r.dropped ? ' (dropped)' : ''}
-                    </span>
-                  `).join("")}
-                  ${last.modifier !== 0 ? `
-                    <span class="die-result-pill" style="border-color: var(--color-gold); color: var(--color-gold-light);">
-                      Mod: ${last.modifier > 0 ? `+${last.modifier}` : last.modifier}
-                    </span>
-                  ` : ""}
-                </div>
-              ` : ""}
-
-              <div class="roll-breakdown-details">
-                ${last.calculation || `Total: ${last.total}`}
-              </div>
-            </div>
-          ` : `
-            <div class="dialog-inner-card" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 16px;">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 24px;">🎲</span>
-                <div>
-                  <strong style="color: var(--color-gold); font-size: 14px; display: block;">Ready to Roll</strong>
-                  <span style="font-size: 11.5px; color: var(--text-muted);">Pick dice below or tap any preset to roll</span>
-                </div>
-              </div>
-              <button class="quick-chip selected" style="padding: 6px 14px; font-weight: 800;" onclick="quickRollPreset('d20_check')">Quick d20</button>
-            </div>
-          `}
-        </div>
-
         <div class="desktop-dice-layout">
-          <!-- LEFT COLUMN: CONTROLS & PRESETS -->
+          <!-- LEFT COLUMN: ROLL RESULT SPOTLIGHT & CONTROLS -->
           <div class="desktop-dice-left">
+            <!-- ACTIVE ROLL RESULT SPOTLIGHT CARD (At the top above dice selector) -->
+            ${last ? `
+              <div class="roll-result-card ${last.isNat20 ? 'nat20' : last.isNat1 ? 'nat1' : ''}" style="margin-bottom: 6px;">
+                <span style="font-size: 12px; font-weight: 800; letter-spacing: 1px; color: ${last.isNat20 ? '#34d399' : last.isNat1 ? '#ef4444' : 'var(--color-gold)'}; text-transform: uppercase;">
+                  ${last.isNat20 ? '🌟 NATURAL 20! CRITICAL HIT!' : last.isNat1 ? '💀 NATURAL 1! CRITICAL FUMBLE!' : 'ROLL RESULT'}
+                </span>
+
+                <div class="roll-total-num ${last.isNat20 ? 'green' : last.isNat1 ? 'red' : ''}">
+                  ${last.total}
+                </div>
+
+                <div style="font-size: 14px; font-weight: 800; color: var(--text-white);">
+                  ${last.formula}
+                </div>
+
+                <!-- Dice Individual Badges -->
+                ${last.rolls && last.rolls.length > 0 ? `
+                  <div class="dice-breakdown-chips-row">
+                    ${last.rolls.map((r, idx) => `
+                      <span class="die-result-pill ${r.dropped ? 'dropped' : ''} ${r.value === 20 && last.sides === 20 ? 'crit' : r.value === 1 && last.sides === 20 ? 'fumble' : ''}">
+                        ${r.label || `Die ${idx+1}`}: ${r.value}${r.dropped ? ' (dropped)' : ''}
+                      </span>
+                    `).join("")}
+                    ${last.modifier !== 0 ? `
+                      <span class="die-result-pill" style="border-color: var(--color-gold); color: var(--color-gold-light);">
+                        Mod: ${last.modifier > 0 ? `+${last.modifier}` : last.modifier}
+                      </span>
+                    ` : ""}
+                  </div>
+                ` : ""}
+
+                <div class="roll-breakdown-details">
+                  ${last.calculation || `Total: ${last.total}`} • Rolled at ${last.timestamp || "Just now"}
+                </div>
+              </div>
+            ` : `
+              <div class="dialog-inner-card" style="text-align: center; padding: 20px 14px; align-items: center; margin-bottom: 6px; border-style: dashed;">
+                <span style="font-size: 26px;">🎲</span>
+                <strong style="color: var(--color-gold); font-size: 15px; margin-top: 4px;">Ready to Roll</strong>
+                <p style="font-size: 11.5px; color: var(--text-muted); max-width: 280px; margin-top: 2px;">Select dice below and tap Roll, or pick a quick preset.</p>
+              </div>
+            `}
+
             <!-- Roller View Mode Switcher: Single Die vs Mixed Pool -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
               <span style="font-size: 11px; font-weight: 800; color: var(--color-gold); text-transform: uppercase; letter-spacing: 0.5px;">
@@ -1857,15 +1886,21 @@ function renderDiceScreen() {
             </div>
           </div>
 
-          <!-- RIGHT COLUMN ON PC: ROLL HISTORY & 5E REFERENCE -->
+          <!-- RIGHT COLUMN ON PC: ROLL HISTORY & RULES -->
           <div class="desktop-dice-right">
             <!-- RECENT ROLL HISTORY -->
-            ${(store.diceHistory && store.diceHistory.length > 0) ? `
-              <div class="dialog-inner-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <span class="dialog-inner-title">📜 Roll History (${store.diceHistory.length})</span>
+            <div class="dialog-inner-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span class="dialog-inner-title">📜 Roll History (${(store.diceHistory || []).length})</span>
+                ${(store.diceHistory && store.diceHistory.length > 0) ? `
                   <button class="btn-header-link crimson" style="font-size: 11px;" onclick="clearDiceHistory()">Clear</button>
+                ` : ""}
+              </div>
+              ${(!store.diceHistory || store.diceHistory.length === 0) ? `
+                <div style="font-size: 12px; color: var(--text-subtle); padding: 16px 0; text-align: center;">
+                  No previous rolls yet. Rolled totals and breakdowns will appear here.
                 </div>
+              ` : `
                 <div style="display: flex; flex-direction: column; gap: 6px; max-height: 380px; overflow-y: auto;">
                   ${store.diceHistory.map(h => `
                     <div class="roll-history-item">
@@ -1882,24 +1917,17 @@ function renderDiceScreen() {
                     </div>
                   `).join("")}
                 </div>
-              </div>
-            ` : `
-              <div class="dialog-inner-card" style="padding: 16px; text-align: center;">
-                <span style="font-size: 26px;">📜</span>
-                <span class="dialog-inner-title" style="margin-top: 4px; display: block;">No Past Rolls</span>
-                <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">Past rolls will be logged here for quick reference during combat.</p>
-              </div>
-            `}
+              `}
+            </div>
 
-            <!-- 5E REFERENCE TIPS -->
+            <!-- 5E RULES REFERENCE CARD -->
             <div class="dialog-inner-card">
-              <span class="dialog-inner-title">⚡ 5e Quick Dice Rules</span>
-              <ul style="font-size: 11.5px; color: var(--text-muted); padding-left: 16px; display: flex; flex-direction: column; gap: 5px; margin-top: 6px;">
-                <li><strong>Critical Hit (Nat 20):</strong> Roll all damage dice twice and add normal modifier.</li>
-                <li><strong>Advantage:</strong> Roll 2d20, keep the higher result.</li>
-                <li><strong>Disadvantage:</strong> Roll 2d20, keep the lower result.</li>
-                <li><strong>Ability Checks:</strong> 1d20 + Ability Modifier + Proficiency (if proficient).</li>
-              </ul>
+              <span class="dialog-inner-title">⚔️ 5e Dice Mechanics</span>
+              <div style="font-size: 12px; color: var(--text-muted); line-height: 1.45; display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                <div><strong style="color: #34d399;">Natural 20:</strong> Critical hit! Roll attack damage dice twice before adding modifiers.</div>
+                <div><strong style="color: #ef4444;">Natural 1:</strong> Critical fumble! Attack automatically misses regardless of modifiers.</div>
+                <div><strong style="color: var(--color-gold);">Advantage / Disadvantage:</strong> Roll two d20s and take the higher or lower result.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -2821,19 +2849,6 @@ function toggleCombatantCondition(combatantId, condId) {
   renderApp();
 }
 
-function removeCombatantCondition(combatantId, condId) {
-  const c = store.encounter.combatants.find(x => x.id === combatantId);
-  if (!c || !c.conditions) return;
-  const idx = c.conditions.findIndex(cn => (typeof cn === 'string' ? cn : cn.id) === condId);
-  if (idx >= 0) {
-    c.conditions.splice(idx, 1);
-    store.logEvent(`Removed ${getConditionName(condId)} from ${c.name}`, "info");
-    store.save();
-    renderApp();
-    showToast(`Removed ${getConditionName(condId)}`);
-  }
-}
-
 // ------------------------------------------
 // 6. SINGLE INITIATIVE MODAL
 // ------------------------------------------
@@ -3014,7 +3029,7 @@ function clearBestiarySelections() {
 }
 
 function spawnMonsterWithQty(monsterName, qty = 1) {
-  const m = getAllBestiaryMonsters().find(x => x.name === monsterName);
+  const m = findMonsterByName(monsterName);
   if (!m) return;
   const count = Math.max(1, parseInt(qty, 10) || 1);
 
@@ -3062,6 +3077,120 @@ function spawnMonsterWithQty(monsterName, qty = 1) {
   showToast(`Deployed ${count}x ${m.name} to combat!`);
 }
 
+// ------------------------------------------
+// CUSTOM MONSTER LIBRARY HANDLERS
+// ------------------------------------------
+function openCreateCustomMonsterModal(monsterId = null) {
+  const isEdit = !!monsterId;
+  const existing = isEdit ? (store.customMonsters || []).find(m => m.id === monsterId) : null;
+
+  const titleEl = document.getElementById("modal-cm-title");
+  if (titleEl) titleEl.textContent = isEdit ? `Edit ${existing.name}` : "Create Custom Monster";
+
+  const idEl = document.getElementById("modal-cm-id");
+  if (idEl) idEl.value = isEdit ? existing.id : "";
+
+  const nameEl = document.getElementById("modal-cm-name");
+  if (nameEl) nameEl.value = existing ? existing.name : "";
+
+  const typeEl = document.getElementById("modal-cm-type");
+  if (typeEl) typeEl.value = existing ? existing.type : "Humanoid";
+
+  const crEl = document.getElementById("modal-cm-cr");
+  if (crEl) crEl.value = existing ? existing.cr : "CR 1";
+
+  const hpEl = document.getElementById("modal-cm-hp");
+  if (hpEl) hpEl.value = existing ? existing.maxHp : 22;
+
+  const acEl = document.getElementById("modal-cm-ac");
+  if (acEl) acEl.value = existing ? existing.ac : 13;
+
+  const initEl = document.getElementById("modal-cm-init");
+  if (initEl) initEl.value = existing ? existing.initMod : 1;
+
+  const spdEl = document.getElementById("modal-cm-speed");
+  if (spdEl) spdEl.value = existing ? existing.speed : 30;
+
+  const percEl = document.getElementById("modal-cm-perc");
+  if (percEl) percEl.value = existing ? existing.perception : 11;
+
+  const dcEl = document.getElementById("modal-cm-dc");
+  if (dcEl) dcEl.value = (existing && existing.spellDc != null) ? existing.spellDc : "";
+
+  const notesEl = document.getElementById("modal-cm-notes");
+  if (notesEl) notesEl.value = existing ? (existing.notes || "") : "";
+
+  openModal("modal-custom-monster-dialog");
+}
+
+function saveCustomMonsterToLibrary() {
+  const id = document.getElementById("modal-cm-id").value;
+  const name = document.getElementById("modal-cm-name").value.trim();
+  if (!name) {
+    showToast("Please enter a monster name");
+    return;
+  }
+  const type = document.getElementById("modal-cm-type").value;
+  const cr = document.getElementById("modal-cm-cr").value;
+  const hp = parseInt(document.getElementById("modal-cm-hp").value, 10) || 10;
+  const ac = parseInt(document.getElementById("modal-cm-ac").value, 10) || 10;
+  const initMod = parseInt(document.getElementById("modal-cm-init").value, 10) || 0;
+  const speed = parseInt(document.getElementById("modal-cm-speed").value, 10) || 30;
+  const perc = parseInt(document.getElementById("modal-cm-perc").value, 10) || 10;
+  const dcRaw = document.getElementById("modal-cm-dc").value.trim();
+  const spellDc = dcRaw ? parseInt(dcRaw, 10) : null;
+  const notes = document.getElementById("modal-cm-notes").value.trim();
+
+  store.customMonsters = store.customMonsters || [];
+
+  if (id) {
+    // Edit existing
+    store.customMonsters = store.customMonsters.map(m => {
+      if (m.id === id) {
+        return { ...m, name, type, cr, maxHp: hp, ac, initMod, speed, perception: perc, spellDc, notes, isCustom: true };
+      }
+      return m;
+    });
+    showToast(`Updated ${name} in Bestiary!`);
+  } else {
+    // Add new
+    const newMonster = {
+      id: "cm-" + Date.now(),
+      name,
+      type,
+      cr,
+      maxHp: hp,
+      ac,
+      initMod,
+      speed,
+      perception: perc,
+      spellDc,
+      notes,
+      isCustom: true
+    };
+    store.customMonsters.unshift(newMonster);
+    showToast(`Added ${name} to Bestiary Library!`);
+  }
+
+  store.save();
+  closeModal("modal-custom-monster-dialog");
+  renderApp();
+}
+
+function deleteCustomMonster(id) {
+  const monster = (store.customMonsters || []).find(m => m.id === id);
+  if (!monster) return;
+  const name = monster.name;
+
+  store.customMonsters = (store.customMonsters || []).filter(m => m.id !== id);
+  if (store.bestiarySelectedMonsters) {
+    delete store.bestiarySelectedMonsters[name];
+  }
+  store.save();
+  renderApp();
+  showToast(`Deleted ${name} from library`);
+}
+
 function deploySelectedBestiaryMonsters() {
   const selectedNames = Object.keys(store.bestiarySelectedMonsters || {}).filter(k => store.bestiarySelectedMonsters[k]);
   if (selectedNames.length === 0) {
@@ -3081,96 +3210,6 @@ function deploySelectedBestiaryMonsters() {
   store.save();
   renderApp();
   showToast(`Deployed ${totalDeployed} foes to Combat Arena!`);
-}
-
-// ------------------------------------------
-// CUSTOM BESTIARY LIBRARY MODAL HANDLERS
-// ------------------------------------------
-function openCustomMonsterModal(editMonsterName = null) {
-  const isEditing = !!editMonsterName;
-  const existing = isEditing ? (store.customBestiaryMonsters || []).find(x => x.name === editMonsterName) : null;
-
-  document.getElementById("modal-cbestiary-title").textContent = isEditing ? `Edit Monster: ${existing.name}` : "Add Monster to Library";
-  document.getElementById("modal-cbestiary-original-name").value = isEditing ? existing.name : "";
-  document.getElementById("modal-cbestiary-name").value = existing ? existing.name : "";
-  document.getElementById("modal-cbestiary-type").value = existing ? existing.type : "Humanoid";
-  document.getElementById("modal-cbestiary-cr").value = existing ? existing.cr : "CR 1";
-  document.getElementById("modal-cbestiary-hp").value = existing ? existing.maxHp : 25;
-  document.getElementById("modal-cbestiary-ac").value = existing ? existing.ac : 13;
-  document.getElementById("modal-cbestiary-init").value = existing ? existing.initMod : 1;
-  document.getElementById("modal-cbestiary-speed").value = existing ? existing.speed : 30;
-  document.getElementById("modal-cbestiary-perception").value = existing ? existing.perception : 11;
-  document.getElementById("modal-cbestiary-dc").value = existing && existing.spellDc ? existing.spellDc : "";
-  document.getElementById("modal-cbestiary-notes").value = existing ? existing.notes : "";
-
-  openModal("modal-custom-bestiary-dialog");
-}
-
-function saveCustomMonsterToLibrary() {
-  const origName = document.getElementById("modal-cbestiary-original-name").value;
-  const name = document.getElementById("modal-cbestiary-name").value.trim();
-  const type = document.getElementById("modal-cbestiary-type").value || "Humanoid";
-  const cr = document.getElementById("modal-cbestiary-cr").value || "CR 1";
-  const hp = parseInt(document.getElementById("modal-cbestiary-hp").value, 10) || 20;
-  const ac = parseInt(document.getElementById("modal-cbestiary-ac").value, 10) || 12;
-  const init = parseInt(document.getElementById("modal-cbestiary-init").value, 10) || 0;
-  const speed = parseInt(document.getElementById("modal-cbestiary-speed").value, 10) || 30;
-  const perception = parseInt(document.getElementById("modal-cbestiary-perception").value, 10) || 10;
-  const dcVal = document.getElementById("modal-cbestiary-dc").value.trim();
-  const dc = dcVal ? (parseInt(dcVal, 10) || null) : null;
-  const notes = document.getElementById("modal-cbestiary-notes").value.trim();
-
-  if (!name) {
-    showToast("Monster name is required");
-    return;
-  }
-
-  store.customBestiaryMonsters = store.customBestiaryMonsters || [];
-
-  const monsterData = {
-    name: name,
-    cr: cr,
-    type: type,
-    maxHp: hp,
-    ac: ac,
-    initMod: init,
-    speed: speed,
-    perception: perception,
-    spellDc: dc,
-    notes: notes,
-    isCustom: true
-  };
-
-  if (origName) {
-    const idx = store.customBestiaryMonsters.findIndex(x => x.name === origName);
-    if (idx >= 0) {
-      store.customBestiaryMonsters[idx] = monsterData;
-    } else {
-      store.customBestiaryMonsters.push(monsterData);
-    }
-  } else {
-    // Check if monster with same name exists
-    const existingIdx = store.customBestiaryMonsters.findIndex(x => x.name.toLowerCase() === name.toLowerCase());
-    if (existingIdx >= 0) {
-      store.customBestiaryMonsters[existingIdx] = monsterData;
-    } else {
-      store.customBestiaryMonsters.unshift(monsterData);
-    }
-  }
-
-  store.save();
-  closeModal("modal-custom-bestiary-dialog");
-  renderApp();
-  showToast(`Saved "${name}" to Bestiary Library!`);
-}
-
-function deleteCustomMonsterFromLibrary(name) {
-  store.customBestiaryMonsters = (store.customBestiaryMonsters || []).filter(x => x.name !== name);
-  if (store.bestiarySelectedMonsters) delete store.bestiarySelectedMonsters[name];
-  if (store.bestiaryQuantities) delete store.bestiaryQuantities[name];
-  store.save();
-  renderApp();
-  showToast(`Deleted "${name}" from library`);
 }
 
 // ------------------------------------------

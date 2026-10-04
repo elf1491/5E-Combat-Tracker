@@ -966,6 +966,78 @@ body {
   color: var(--color-gold);
 }
 
+/* Active Conditions Section in Current Turn Box */
+.turn-conditions-section {
+  background: var(--bg-card-darker);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.turn-conditions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.turn-conditions-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.turn-conditions-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.pill-turn-condition {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-card);
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.15s;
+  user-select: none;
+}
+
+.pill-turn-condition:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.cond-rounds-left-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 99px;
+  background: #f59e0b;
+  color: #1a1202;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  margin-left: 6px;
+  box-shadow: 0 1px 4px rgba(245, 158, 11, 0.4);
+}
+
 /* Abilities & Actions Section (Inside Spotlight Card) */
 .abilities-section-card {
   background: var(--bg-card-darker);
@@ -2785,149 +2857,6 @@ body {
   .desktop-combat-right .combatants-list-container .combatant-list-card {
     margin: 0 !important;
   }
-}
-
-/* ==========================================
-   TURN CONDITIONS ROW & TIMER NUMBER BUBBLES
-   ========================================== */
-.turn-conditions-row {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: var(--bg-card-darker);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 10px 12px;
-  margin-bottom: 12px;
-}
-
-.turn-conditions-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.turn-conditions-title {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--color-gold);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.turn-conditions-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-
-.turn-cond-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1.5px solid var(--border-card);
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.turn-cond-pill:hover {
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.turn-cond-timer-bubble {
-  background: #38bdf8;
-  color: #081528;
-  font-size: 10.5px;
-  font-weight: 900;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 99px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-}
-
-.turn-cond-remove {
-  font-size: 11.5px;
-  color: #94a3b8;
-  margin-left: 2px;
-  font-weight: 800;
-  padding: 0 2px;
-}
-
-.turn-cond-remove:hover {
-  color: #ef4444;
-}
-
-.btn-add-cond-mini {
-  background: transparent;
-  border: 1px dashed var(--color-gold);
-  color: var(--color-gold-light);
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.15s;
-}
-
-.btn-add-cond-mini:hover {
-  background: rgba(245, 158, 11, 0.15);
-}
-
-/* Custom Monster Badges & Actions in Bestiary */
-.custom-monster-badge {
-  background: rgba(245, 158, 11, 0.18);
-  border: 1px solid var(--color-gold);
-  color: var(--color-gold-light);
-  font-size: 10px;
-  font-weight: 800;
-  padding: 2px 7px;
-  border-radius: 6px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
-
-.btn-card-action-mini {
-  background: var(--bg-card-darker);
-  border: 1px solid var(--border-card);
-  color: var(--text-muted);
-  font-size: 11.5px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-card-action-mini:hover {
-  border-color: var(--color-gold);
-  color: #fff;
-}
-
-.btn-card-action-mini.del:hover {
-  border-color: #ef4444;
-  color: #f87171;
-  background: rgba(239, 68, 68, 0.15);
-}
-
-/* Top Dice Result Banner */
-.top-dice-result-container {
-  margin-bottom: 14px;
 }
 
 

@@ -424,13 +424,13 @@
     </div>
   </div>
 
-  <!-- 8. Add Enemy Modal -->
+  <!-- 8. Add Enemy Modal (Quick combat addition) -->
   <div class="modal-backdrop" id="modal-enemy-dialog">
     <div class="dialog-container">
       <div class="dialog-header">
         <span class="dialog-header-icon">👹</span>
         <div class="dialog-header-titles">
-          <span class="dialog-main-title">Add Monster</span>
+          <span class="dialog-main-title">Quick Add Monster</span>
         </div>
       </div>
       <div class="dialog-body">
@@ -448,6 +448,121 @@
       <div class="dialog-footer">
         <button class="btn-dialog-cancel" onclick="closeModal('modal-enemy-dialog')">Cancel</button>
         <button class="btn-dialog-save" onclick="saveCustomEnemy()">Add to Combat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8B. Create Custom Monster Dialog (Bestiary Library) -->
+  <div class="modal-backdrop" id="modal-custom-monster-dialog">
+    <div class="dialog-container">
+      <div class="dialog-header">
+        <span class="dialog-header-icon">🐉</span>
+        <div class="dialog-header-titles">
+          <span class="dialog-main-title" id="modal-cm-title">Create Custom Monster</span>
+          <span class="dialog-subtitle">Save a monster to your persistent 5e Bestiary library</span>
+        </div>
+      </div>
+
+      <div class="dialog-body">
+        <input type="hidden" id="modal-cm-id">
+
+        <div>
+          <span class="dialog-inner-title">MONSTER NAME</span>
+          <input type="text" id="modal-cm-name" class="form-input-outlined" placeholder="e.g. Shadow Assassin, Bone Golem">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div>
+            <span class="dialog-inner-title">CREATURE TYPE</span>
+            <select id="modal-cm-type" class="form-input-outlined">
+              <option value="Humanoid">Humanoid</option>
+              <option value="Undead">Undead</option>
+              <option value="Beast">Beast</option>
+              <option value="Giant">Giant</option>
+              <option value="Dragon">Dragon</option>
+              <option value="Aberration">Aberration</option>
+              <option value="Monstrosity">Monstrosity</option>
+              <option value="Fiend">Fiend</option>
+              <option value="Construct">Construct</option>
+              <option value="Celestial">Celestial</option>
+              <option value="Elemental">Elemental</option>
+              <option value="Fey">Fey</option>
+              <option value="Ooze">Ooze</option>
+              <option value="Plant">Plant</option>
+            </select>
+          </div>
+          <div>
+            <span class="dialog-inner-title">CHALLENGE RATING (CR)</span>
+            <select id="modal-cm-cr" class="form-input-outlined">
+              <option value="CR 0">CR 0</option>
+              <option value="CR 1/8">CR 1/8</option>
+              <option value="CR 1/4">CR 1/4</option>
+              <option value="CR 1/2">CR 1/2</option>
+              <option value="CR 1" selected>CR 1</option>
+              <option value="CR 2">CR 2</option>
+              <option value="CR 3">CR 3</option>
+              <option value="CR 4">CR 4</option>
+              <option value="CR 5">CR 5</option>
+              <option value="CR 6">CR 6</option>
+              <option value="CR 7">CR 7</option>
+              <option value="CR 8">CR 8</option>
+              <option value="CR 9">CR 9</option>
+              <option value="CR 10">CR 10</option>
+              <option value="CR 11">CR 11</option>
+              <option value="CR 12">CR 12</option>
+              <option value="CR 13">CR 13</option>
+              <option value="CR 14">CR 14</option>
+              <option value="CR 15">CR 15</option>
+              <option value="CR 16">CR 16</option>
+              <option value="CR 17">CR 17</option>
+              <option value="CR 18">CR 18</option>
+              <option value="CR 19">CR 19</option>
+              <option value="CR 20">CR 20</option>
+              <option value="CR 21+">CR 21+</option>
+            </select>
+          </div>
+        </div>
+
+        <span class="dialog-inner-title">CORE COMBAT ATTRIBUTES</span>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:2px;">MAX HP</label>
+            <input type="number" id="modal-cm-hp" class="form-input-outlined" value="22" min="1">
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:2px;">AC</label>
+            <input type="number" id="modal-cm-ac" class="form-input-outlined" value="13" min="1">
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:2px;">INIT MOD</label>
+            <input type="number" id="modal-cm-init" class="form-input-outlined" value="1">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:2px;">SPEED (FT)</label>
+            <input type="number" id="modal-cm-speed" class="form-input-outlined" value="30" step="5">
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:2px;">PERCEPTION</label>
+            <input type="number" id="modal-cm-perc" class="form-input-outlined" value="11">
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:2px;">SPELL DC (OPT)</label>
+            <input type="number" id="modal-cm-dc" class="form-input-outlined" placeholder="None">
+          </div>
+        </div>
+
+        <div>
+          <span class="dialog-inner-title">ATTACKS, TRAITS & ACTIONS</span>
+          <textarea id="modal-cm-notes" class="form-input-outlined" rows="3" placeholder="e.g. Multiattack (2 Scimitars +4, 1d6+2), Pack Tactics, Darkvision 60ft"></textarea>
+        </div>
+      </div>
+
+      <div class="dialog-footer">
+        <button class="btn-dialog-cancel" onclick="closeModal('modal-custom-monster-dialog')">Cancel</button>
+        <button class="btn-dialog-save" onclick="saveCustomMonsterToLibrary()">Save to Library</button>
       </div>
     </div>
   </div>
@@ -551,119 +666,6 @@
       <div class="dialog-footer">
         <button class="btn-dialog-cancel" onclick="closeModal('modal-preset-dialog')">Cancel</button>
         <button class="btn-dialog-save" onclick="saveCustomDicePreset()">Save Preset</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 12. Custom Bestiary Monster Modal (Add/Edit in Library) -->
-  <div class="modal-backdrop" id="modal-custom-bestiary-dialog">
-    <div class="dialog-container" style="max-width: 500px;">
-      <div class="dialog-header">
-        <span class="dialog-header-icon">🐉</span>
-        <div class="dialog-header-titles">
-          <span class="dialog-main-title" id="modal-cbestiary-title">Add Monster to Library</span>
-          <span class="dialog-subtitle">Save custom monster into your Bestiary library with full stats</span>
-        </div>
-      </div>
-      <div class="dialog-body" style="gap: 10px; max-height: 65vh; overflow-y: auto;">
-        <input type="hidden" id="modal-cbestiary-original-name" value="">
-        
-        <div style="display:flex; flex-direction:column; gap:4px;">
-          <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Monster Name *</label>
-          <input type="text" id="modal-cbestiary-name" class="form-input-outlined" placeholder="e.g. Ogre Mage, Owlbear Matriarch">
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Creature Type *</label>
-            <select id="modal-cbestiary-type" class="form-input-outlined">
-              <option value="Humanoid">Humanoid</option>
-              <option value="Beast">Beast</option>
-              <option value="Undead">Undead</option>
-              <option value="Monstrosity">Monstrosity</option>
-              <option value="Dragon">Dragon</option>
-              <option value="Giant">Giant</option>
-              <option value="Fiend">Fiend</option>
-              <option value="Aberration">Aberration</option>
-              <option value="Construct">Construct</option>
-              <option value="Elemental">Elemental</option>
-              <option value="Fey">Fey</option>
-              <option value="Celestial">Celestial</option>
-              <option value="Ooze">Ooze</option>
-              <option value="Plant">Plant</option>
-            </select>
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Challenge Rating (CR) *</label>
-            <select id="modal-cbestiary-cr" class="form-input-outlined">
-              <option value="CR 0">CR 0</option>
-              <option value="CR 1/8">CR 1/8</option>
-              <option value="CR 1/4">CR 1/4</option>
-              <option value="CR 1/2">CR 1/2</option>
-              <option value="CR 1">CR 1</option>
-              <option value="CR 2">CR 2</option>
-              <option value="CR 3">CR 3</option>
-              <option value="CR 4">CR 4</option>
-              <option value="CR 5">CR 5</option>
-              <option value="CR 6">CR 6</option>
-              <option value="CR 7">CR 7</option>
-              <option value="CR 8">CR 8</option>
-              <option value="CR 9">CR 9</option>
-              <option value="CR 10">CR 10</option>
-              <option value="CR 11">CR 11</option>
-              <option value="CR 12">CR 12</option>
-              <option value="CR 13">CR 13</option>
-              <option value="CR 14">CR 14</option>
-              <option value="CR 15">CR 15</option>
-              <option value="CR 16">CR 16</option>
-              <option value="CR 17">CR 17</option>
-              <option value="CR 18">CR 18</option>
-              <option value="CR 19">CR 19</option>
-              <option value="CR 20">CR 20</option>
-              <option value="CR 21+">CR 21+</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Max HP *</label>
-            <input type="number" id="modal-cbestiary-hp" class="form-input-outlined" placeholder="HP" value="25" min="1">
-          </div>
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Armor Class (AC) *</label>
-            <input type="number" id="modal-cbestiary-ac" class="form-input-outlined" placeholder="AC" value="13" min="1">
-          </div>
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Init Mod *</label>
-            <input type="number" id="modal-cbestiary-init" class="form-input-outlined" placeholder="Init" value="1">
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Speed (ft) *</label>
-            <input type="number" id="modal-cbestiary-speed" class="form-input-outlined" placeholder="Speed" value="30" min="0" step="5">
-          </div>
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Perception *</label>
-            <input type="number" id="modal-cbestiary-perception" class="form-input-outlined" placeholder="10" value="11">
-          </div>
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Spell DC (opt)</label>
-            <input type="number" id="modal-cbestiary-dc" class="form-input-outlined" placeholder="e.g. 13">
-          </div>
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:4px;">
-          <label style="font-size:11px; font-weight:700; color:var(--text-muted);">Traits, Attacks & Special Actions</label>
-          <textarea id="modal-cbestiary-notes" class="form-input-outlined" rows="3" placeholder="e.g. Multiattack (2x Claws +4, 1d8+2), Pack Tactics, Breath Weapon"></textarea>
-        </div>
-      </div>
-      <div class="dialog-footer">
-        <button class="btn-dialog-cancel" onclick="closeModal('modal-custom-bestiary-dialog')">Cancel</button>
-        <button class="btn-dialog-save" onclick="saveCustomMonsterToLibrary()">Save to Library</button>
       </div>
     </div>
   </div>
