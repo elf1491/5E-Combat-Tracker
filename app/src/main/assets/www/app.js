@@ -492,6 +492,40 @@ function getConditionInfo(cItem) {
   };
 }
 
+// ------------------------------------------
+// SYNCHRONIZED AC & SPEED RECALCULATION
+// ------------------------------------------
+function recalculateCombatantStats(c) {
+  if (!c) return;
+  c.baseSpeed = c.baseSpeed != null ? c.baseSpeed : (c.speed || 30);
+  c.baseArmorClass = c.baseArmorClass != null ? c.baseArmorClass : (c.armorClass || 10);
+  c.conditions = c.conditions || [];
+
+  // 1. Difficult Terrain synchronization
+  const hasDiff = c.conditions.some(cn => (typeof cn === 'string' ? cn : cn.id) === "difficult_terrain");
+  c.isDifficultTerrain = hasDiff;
+  c.speed = hasDiff ? Math.floor(c.baseSpeed / 2) : c.baseSpeed;
+
+  // 2. Cover synchronization (mutually exclusive)
+  const hasTotal = c.conditions.some(cn => (typeof cn === 'string' ? cn : cn.id) === "total_cover");
+  const hasThreeFourths = c.conditions.some(cn => (typeof cn === 'string' ? cn : cn.id) === "three_quarters_cover");
+  const hasHalf = c.conditions.some(cn => (typeof cn === 'string' ? cn : cn.id) === "half_cover");
+
+  if (hasTotal) {
+    c.coverType = "TOTAL";
+    c.armorClass = c.baseArmorClass + 10;
+  } else if (hasThreeFourths) {
+    c.coverType = "THREE_QUARTERS";
+    c.armorClass = c.baseArmorClass + 5;
+  } else if (hasHalf) {
+    c.coverType = "HALF";
+    c.armorClass = c.baseArmorClass + 2;
+  } else {
+    c.coverType = "NONE";
+    c.armorClass = c.baseArmorClass;
+  }
+}
+
 function checkConditionExpirations(prevActor, currActor, isNewRound) {
   if (prevActor && prevActor.conditions) {
     prevActor.conditions = prevActor.conditions.filter(cn => {
@@ -510,6 +544,7 @@ function checkConditionExpirations(prevActor, currActor, isNewRound) {
       }
       return true;
     });
+    recalculateCombatantStats(prevActor);
   }
 
   if (currActor && currActor.conditions) {
@@ -522,6 +557,7 @@ function checkConditionExpirations(prevActor, currActor, isNewRound) {
       }
       return true;
     });
+    recalculateCombatantStats(currActor);
   }
 
   if (isNewRound) {
@@ -537,6 +573,7 @@ function checkConditionExpirations(prevActor, currActor, isNewRound) {
           }
           return true;
         });
+        recalculateCombatantStats(c);
       }
     });
   }
@@ -898,6 +935,7 @@ function setAppTab(tab) {
 // ------------------------------------------
 function renderCombatScreen() {
   const enc = store.encounter;
+  enc.combatants.forEach(c => recalculateCombatantStats(c));
   const combatants = enc.combatants;
   const active = combatants[enc.currentTurnIndex] || null;
   const onDeck = combatants.length > 1 ? combatants[(enc.currentTurnIndex + 1) % combatants.length] : null;
@@ -1049,7 +1087,6 @@ function renderCombatScreen() {
                   <span>✨</span>
                   <span>Active Conditions</span>
                 </div>
-                <button class="btn-header-link gold" style="font-size:11px;" onclick="openConditionsModal('${active.id}')">+ Add / Edit</button>
               </div>
 
               <div class="turn-conditions-chips-row">
@@ -1081,7 +1118,7 @@ function renderCombatScreen() {
                 }).join("")}
 
                 ${(!active.conditions || active.conditions.length === 0) && (!active.coverType || active.coverType === "NONE") && !active.isDifficultTerrain ? `
-                  <span style="font-size:11.5px; color:var(--text-subtle); font-style:italic;">No active conditions. Tap "+ Add / Edit" to apply.</span>
+                  <span style="font-size:11.5px; color:var(--text-subtle); font-style:italic;">No active conditions.</span>
                 ` : ""}
               </div>
             </div>
@@ -1851,37 +1888,22 @@ function renderDiceScreen() {
               </div>
             `}
 
-            <!-- CUSTOM DICE PRESETS (User Saved Shortcuts) -->
+            <!-- CUSTOM DICE PRESETS (Condensed Like Quick Presets) -->
             <div class="dialog-inner-card">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span class="dialog-inner-title">⭐ My Custom Presets (${(store.customDicePresets || []).length})</span>
-                <button class="btn-header-link gold" onclick="openCustomPresetModal()">+ Add Preset</button>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span class="dialog-inner-title">⭐ Custom Presets (${(store.customDicePresets || []).length})</span>
+                <button class="btn-header-link gold" style="font-size: 11.5px;" onclick="openCustomPresetModal()">+ Add Preset</button>
               </div>
-              <div class="quick-chips-row" style="margin-top: 8px;">
+              <div class="quick-chips-row" style="margin-top: 6px;">
                 ${(store.customDicePresets || []).map(p => `
-                  <div class="custom-preset-chip" onclick="rollCustomDicePreset('${p.id}')">
-                    <span>🎲 <strong>${p.name}</strong> (${p.formula})</span>
+                  <div class="quick-chip custom-preset-condensed" onclick="rollCustomDicePreset('${p.id}')" title="Roll ${p.name}: ${p.formula}">
+                    <span class="preset-name">${p.name}</span>
                     <span class="custom-preset-del" onclick="event.stopPropagation(); deleteCustomDicePreset('${p.id}');" title="Delete">✕</span>
                   </div>
                 `).join("")}
                 ${(!store.customDicePresets || store.customDicePresets.length === 0) ? `
-                  <span style="font-size: 11.5px; color: var(--text-muted);">No custom presets yet. Tap "+ Add Preset" to create shortcuts for your signature attacks or spells!</span>
+                  <span style="font-size: 11.5px; color: var(--text-muted); padding: 4px 0;">No custom presets yet. Tap "+ Add Preset" to create shortcuts!</span>
                 ` : ""}
-              </div>
-            </div>
-
-            <!-- QUICK 5E PRESET BUTTONS -->
-            <div class="dialog-inner-card">
-              <span class="dialog-inner-title">⚡ Quick 5e Presets</span>
-              <div class="quick-chips-row" style="margin-top: 6px;">
-                <button class="quick-chip" onclick="quickRollPreset('d20_check')">1d20 Check</button>
-                <button class="quick-chip" onclick="quickRollPreset('d20_adv')">1d20 (Advantage)</button>
-                <button class="quick-chip" onclick="quickRollPreset('greatsword')">2d6+3 Greatsword</button>
-                <button class="quick-chip" onclick="quickRollPreset('longsword')">1d8+3 Longsword</button>
-                <button class="quick-chip" onclick="quickRollPreset('greataxe')">1d12+3 Greataxe</button>
-                <button class="quick-chip" onclick="quickRollPreset('fireball')">8d6 Fireball</button>
-                <button class="quick-chip" onclick="quickRollPreset('stats_4d6')">4d6 Drop Lowest (Stats)</button>
-                <button class="quick-chip" onclick="quickRollPreset('cantrip_d10')">1d10 Cantrip</button>
               </div>
             </div>
           </div>
@@ -2416,7 +2438,9 @@ function openSpeedModal(combatantId) {
   const c = store.encounter.combatants.find(x => x.id === combatantId);
   if (!c) return;
   store.activeCombatantId = combatantId;
-  store.dialogSpeedBase = c.baseSpeed || c.speed || 30;
+  recalculateCombatantStats(c);
+
+  store.dialogSpeedBase = c.baseSpeed != null ? c.baseSpeed : (c.speed || 30);
   store.dialogSpeedDiff = !!c.isDifficultTerrain;
 
   document.getElementById("modal-speed-combatant-name").textContent = c.name;
@@ -2468,17 +2492,29 @@ function saveSpeedDialog() {
   if (c) {
     const base = store.dialogSpeedBase;
     const isDiff = store.dialogSpeedDiff;
-    const effective = isDiff ? Math.floor(base / 2) : base;
-
-    let conditions = (c.conditions || []).filter(cn => cn !== "difficult_terrain");
-    if (isDiff) conditions.push("difficult_terrain");
 
     c.baseSpeed = base;
-    c.speed = effective;
     c.isDifficultTerrain = isDiff;
-    c.conditions = conditions;
 
-    store.logEvent(`Updated ${c.name} Speed to ${effective}ft ${isDiff ? "(Difficult Terrain)" : ""}`, "info");
+    // Filter out existing difficult_terrain condition (string or object)
+    c.conditions = (c.conditions || []).filter(cn => {
+      const cid = typeof cn === 'string' ? cn : cn.id;
+      return cid !== "difficult_terrain";
+    });
+
+    if (isDiff) {
+      c.conditions.push({
+        id: "difficult_terrain",
+        duration: "permanent",
+        roundsRemaining: null,
+        appliedRound: store.encounter.round,
+        turnsPassed: 0
+      });
+    }
+
+    recalculateCombatantStats(c);
+
+    store.logEvent(`Updated ${c.name} Speed to ${c.speed}ft ${isDiff ? "(Difficult Terrain)" : ""}`, "info");
     store.save();
   }
   closeModal("modal-speed-dialog");
@@ -2492,7 +2528,9 @@ function openAcModal(combatantId) {
   const c = store.encounter.combatants.find(x => x.id === combatantId);
   if (!c) return;
   store.activeCombatantId = combatantId;
-  store.dialogAcBase = c.baseArmorClass || c.armorClass || 10;
+  recalculateCombatantStats(c);
+
+  store.dialogAcBase = c.baseArmorClass != null ? c.baseArmorClass : (c.armorClass || 10);
   store.dialogAcCover = c.coverType || "NONE";
 
   document.getElementById("modal-ac-combatant-name").textContent = c.name;
@@ -2548,20 +2586,27 @@ function saveAcDialog() {
   if (c) {
     const base = store.dialogAcBase;
     const cover = store.dialogAcCover;
-    const bonus = cover === "HALF" ? 2 : cover === "THREE_QUARTERS" ? 5 : cover === "TOTAL" ? 10 : 0;
-    const effective = base + bonus;
-
-    let conditions = (c.conditions || []).filter(cn => !["half_cover", "three_quarters_cover", "total_cover"].includes(cn));
-    if (cover === "HALF") conditions.push("half_cover");
-    if (cover === "THREE_QUARTERS") conditions.push("three_quarters_cover");
-    if (cover === "TOTAL") conditions.push("total_cover");
 
     c.baseArmorClass = base;
-    c.armorClass = effective;
     c.coverType = cover;
-    c.conditions = conditions;
 
-    store.logEvent(`Updated ${c.name} AC to ${effective} (${cover})`, "info");
+    // Filter out existing cover conditions (string or object)
+    c.conditions = (c.conditions || []).filter(cn => {
+      const cid = typeof cn === 'string' ? cn : cn.id;
+      return !["half_cover", "three_quarters_cover", "total_cover"].includes(cid);
+    });
+
+    if (cover === "HALF") {
+      c.conditions.push({ id: "half_cover", duration: "permanent", roundsRemaining: null, appliedRound: store.encounter.round, turnsPassed: 0 });
+    } else if (cover === "THREE_QUARTERS") {
+      c.conditions.push({ id: "three_quarters_cover", duration: "permanent", roundsRemaining: null, appliedRound: store.encounter.round, turnsPassed: 0 });
+    } else if (cover === "TOTAL") {
+      c.conditions.push({ id: "total_cover", duration: "permanent", roundsRemaining: null, appliedRound: store.encounter.round, turnsPassed: 0 });
+    }
+
+    recalculateCombatantStats(c);
+
+    store.logEvent(`Updated ${c.name} AC to ${c.armorClass} (${cover})`, "info");
     store.save();
   }
   closeModal("modal-ac-dialog");
@@ -2800,6 +2845,7 @@ function openConditionsModal(combatantId) {
   const c = store.encounter.combatants.find(x => x.id === combatantId);
   if (!c) return;
   store.activeCombatantId = combatantId;
+  recalculateCombatantStats(c);
 
   document.getElementById("modal-cond-title").textContent = `Conditions: ${c.name}`;
   updateConditionDurationUi();
@@ -2826,12 +2872,24 @@ function toggleCombatantCondition(combatantId, condId) {
   const c = store.encounter.combatants.find(x => x.id === combatantId);
   if (!c) return;
   c.conditions = c.conditions || [];
+  c.baseSpeed = c.baseSpeed != null ? c.baseSpeed : (c.speed || 30);
+  c.baseArmorClass = c.baseArmorClass != null ? c.baseArmorClass : (c.armorClass || 10);
+
   const existingIdx = c.conditions.findIndex(cn => (typeof cn === 'string' ? cn : cn.id) === condId);
 
   if (existingIdx >= 0) {
+    // Unchecking / removing condition
     c.conditions.splice(existingIdx, 1);
     store.logEvent(`Removed ${getConditionName(condId)} from ${c.name}`, "info");
   } else {
+    // If adding a cover type, remove any other active cover conditions first (mutually exclusive)
+    if (["half_cover", "three_quarters_cover", "total_cover"].includes(condId)) {
+      c.conditions = c.conditions.filter(cn => {
+        const cid = typeof cn === 'string' ? cn : cn.id;
+        return !["half_cover", "three_quarters_cover", "total_cover"].includes(cid);
+      });
+    }
+
     const dur = store.activeConditionDuration || "permanent";
     const rounds = store.activeConditionRounds || 1;
     c.conditions.push({
@@ -2843,6 +2901,9 @@ function toggleCombatantCondition(combatantId, condId) {
     });
     store.logEvent(`Applied ${getConditionName(condId)} to ${c.name} (${dur === 'rounds' ? `${rounds} rnds` : dur})`, "info");
   }
+
+  // Recalculate Speed and AC immediately so they are fully linked
+  recalculateCombatantStats(c);
 
   store.save();
   openConditionsModal(combatantId); // refresh checkboxes and tags live in modal

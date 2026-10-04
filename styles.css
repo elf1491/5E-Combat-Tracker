@@ -2710,7 +2710,43 @@ body {
   border-color: var(--color-gold);
 }
 
-/* Custom Dice Presets Chips */
+/* Custom Dice Presets Chips (Condensed like quick presets) */
+.quick-chip.custom-preset-condensed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--bg-card-darker);
+  border: 1px solid var(--border-card);
+  color: var(--text-white);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.quick-chip.custom-preset-condensed:hover {
+  border-color: var(--color-gold);
+  color: var(--color-gold-light);
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.quick-chip.custom-preset-condensed .custom-preset-del {
+  color: #94a3b8;
+  font-size: 10.5px;
+  font-weight: 900;
+  padding: 1px 3px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.quick-chip.custom-preset-condensed .custom-preset-del:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.25);
+}
+
 .custom-preset-chip {
   display: inline-flex;
   align-items: center;
